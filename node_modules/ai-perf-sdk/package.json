@@ -1,0 +1,12 @@
+{
+  "name": "ai-perf-sdk",
+  "version": "1.0.7",
+  "description": "Plug-and-play custom performance monitoring SDK",
+  "license": "MIT",
+  "author": "Akash",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
