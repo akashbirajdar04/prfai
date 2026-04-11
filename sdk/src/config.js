@@ -1,6 +1,6 @@
 const config={
     serviceName:"lighthouse-sdk",
-    collectorUrl:"http://localhost:4317",
+    collectorUrl:"https://webperf-ai.onrender.com/api/telemetry/v1/traces",
     environment:"production",
 }
 module.exports=config
