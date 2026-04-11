@@ -1,5 +1,5 @@
 module.exports = {
     serviceName: "unknown-service",
-    collectorEndpoint: "http://localhost:3001/otel",
+    collectorEndpoint: "https://webperf-ai.onrender.com/api/telemetry",
     environment: "production"
 };

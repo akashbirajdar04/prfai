@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     // HARDCODED to production backend to guarantee it never hits localhost
-    baseURL: import.meta.env.VITE_API_URL || 'https://prfeai-backend.onrender.com/api',
+    baseURL: import.meta.env.VITE_API_URL || 'https://webperf-ai.onrender.com/api',
     headers: {
         'Content-Type': 'application/json',
     },
