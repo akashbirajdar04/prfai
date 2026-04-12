@@ -1,6 +1,6 @@
 {
   "name": "ai-perf-sdk",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Plug-and-play custom performance monitoring SDK",
   "license": "MIT",
   "author": "Akash",
