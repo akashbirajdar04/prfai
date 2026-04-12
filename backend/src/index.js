@@ -10,7 +10,7 @@ connectDB();
 const app = express();
 
 const corsOptions = {
-    origin: ["https://prfeanalyzee-frontend.vercel.app", "http://localhost:5173", "http://localhost:3000"],
+    origin: ["https://prfai.vercel.app", "https://prfeanalyzee-frontend.vercel.app", "http://localhost:5173", "http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-session-id"],
     credentials: true,
