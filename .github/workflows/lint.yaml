@@ -1,24 +1,26 @@
-name:Lint
+name: Lint
+
 on:
   push:
     branches: [main]
-  pull-request:
+  pull_request:
     branches: [main]
-    
+
 jobs:
-    lint:
-      runs-on: ubuntu-latest
-      steps:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
       - name: checkout
         uses: actions/checkout@v4
+
       - name: set up node
-        uses: actions/setup-node@v4 
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: npm  
+
       - name: install dependencies
         run: npm ci
+
       - name: run lint
         run: npm run lint
-      
-
