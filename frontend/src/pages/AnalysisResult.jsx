@@ -176,7 +176,7 @@ const AnalysisResult = () => {
                         Analysis Report
                     </h1>
                     <p className="text-slate-400 mt-1">
-                        {data.targetUrl || data.url || 'No URL info'} • <span className="text-slate-500">{new Date(data.createdAt || Date.now()).toLocaleDateString()}</span>
+                        {data.targetUrl || data.url || 'No URL info'} • <span className="text-slate-500">{data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'Today'}</span>
                     </p>
                 </div>
                 <div className="flex gap-3">
