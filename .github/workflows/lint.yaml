@@ -20,7 +20,10 @@ jobs:
           cache: npm  
 
       - name: install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd frontend && npm install
+          cd ../backend && npm install
 
       - name: run lint
         run: npm run lint
