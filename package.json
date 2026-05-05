@@ -19,6 +19,7 @@
     "sdk": "file:ai-perf-sdk"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "eslint": "^10.3.0"
   }
 }
