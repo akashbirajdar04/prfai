@@ -1,8 +1,9 @@
+const fs = require('fs');
+
 const runLighthouse = async (url) => {
-    // Dynamic import for ESM-only lighthouse package
+    // Dynamic import for ESM-only lighthouse and chrome-launcher packages
     const { default: lighthouse } = await import('lighthouse');
-    const chromeLauncher = require('chrome-launcher');
-    const fs = require('fs');
+    const chromeLauncher = await import('chrome-launcher');
 
     let puppeteer = null;
     try {
