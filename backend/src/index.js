@@ -10,16 +10,17 @@ connectDB();
 const app = express();
 
 const corsOptions = {
-    origin: ["https://hosteldine-six.vercel.app", "https://prfai.vercel.app", "https://prfeanalyzee-frontend.vercel.app", "http://localhost:5173", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-session-id"],
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        return callback(null, origin);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-session-id", "X-Requested-With", "Accept", "Origin"],
     credentials: true,
     optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-
-app.options(/.*/, cors(corsOptions)); // Enable pre-flight for all routes using RegExp for Express 5
 
 // Parse Protobuf data before JSON parser
 app.use(protobufParser);
@@ -48,7 +49,10 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-    res.status(200).send("OK");
+  res.status(200).json({
+    status: "ok",
+    message: "Server is running"
+  });
 });
 
 app.get("/api/health", (req, res) => {

@@ -1,29 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import MetricCard from '../components/dashboard/MetricCard';
 import ApiTable from '../components/analysis/ApiTable';
 import RecommendationCard from '../components/analysis/RecommendationCard';
 import { Button } from '../components/ui/Button';
-import { Zap, Globe, Database, Brain, Download, Share2, Activity, Server } from 'lucide-react';
+import { Badge } from '../components/ui/Badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
+import { Zap, Globe, Database, Brain, Download, Share2, Activity, Server, ArrowLeft, RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
 import analysisService from '../services/analysisService';
 
 const AnalysisResult = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('performance');
     const [data, setData] = useState(null);
     const [showDashboard, setShowDashboard] = useState(false);
-    const [loadingStage, setLoadingStage] = useState(0); // 0: Start, 1: Lighthouse Done
-
-
+    const [loadingStage, setLoadingStage] = useState(0);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const response = await analysisService.getSessionDetails(id);
-
-                // Always update data to show URL and basic info even if running
                 const currentData = response.data;
                 console.log(`[Frontend] Received session data:`, currentData);
                 const backendMetrics = currentData.metrics || {};
@@ -39,15 +38,13 @@ const AnalysisResult = () => {
                 setData(mergedData);
 
                 if (currentData.status === 'completed') {
-                    setLoadingStage(1); // Final AI Done
+                    setLoadingStage(1);
                 } else if (currentData.status === 'waiting_for_telemetry') {
-                    setLoadingStage(1); // Lighthouse Done, now waiting for data
-                    // Keep polling to see incoming telemetry count
+                    setLoadingStage(1);
                     setTimeout(fetchData, 3000);
                 } else if (currentData.status === 'failed') {
                     setError('Analysis failed.');
                 } else {
-                    // Still running initial LH, poll again
                     setTimeout(fetchData, 2000);
                 }
             } catch (err) {
@@ -62,7 +59,6 @@ const AnalysisResult = () => {
     const handleGenerateAI = async () => {
         try {
             await analysisService.generateAI(id);
-            // Reload page or force refresh status
             window.location.reload();
         } catch (e) {
             alert("Failed to start AI generation");
@@ -70,96 +66,81 @@ const AnalysisResult = () => {
     };
 
     if (error) return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
-                <Zap className="w-8 h-8 text-red-500" />
+        <div className="min-h-[65vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div className="w-12 h-12 bg-destructive/10 rounded-xl flex items-center justify-center text-rose-400 border border-destructive/20">
+                <Zap className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-100 mb-2">Analysis Failed</h2>
-            <p className="text-slate-400 max-w-md mb-6">{error}</p>
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg text-left text-sm max-w-lg mb-8">
-                <p className="text-slate-500 mb-2 font-mono">DEBUG INFO:</p>
-                <p className="text-red-400 font-mono break-all">{data?.error?.message || 'Unknown error occurred during processing.'}</p>
+            <h2 className="text-xl font-bold text-foreground">Analysis Failed</h2>
+            <p className="text-sm text-muted-foreground max-w-md">{error}</p>
+            <div className="bg-card border border-border/70 p-4 rounded-xl text-left text-xs max-w-lg w-full font-mono text-muted-foreground">
+                <p className="text-destructive font-sans font-medium mb-1">Details:</p>
+                <p className="break-all">{data?.error?.message || 'Unknown error occurred during lighthouse execution.'}</p>
             </div>
-            <Button onClick={() => window.location.href = '/analysis/new'} variant="outline">
+            <Button onClick={() => navigate('/analysis/new')} variant="outline" size="sm">
                 Try Another URL
             </Button>
-            <p className="mt-4 text-xs text-slate-500">
-                Tip: Ensure the URL is accessible from the public internet and not a local development server like localhost.
-            </p>
         </div>
     );
 
-    // Loading / Summary View
+    // Summary Loading State
     if (!showDashboard) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                {/* Background Ambient */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[100px] -z-10" />
+            <div className="min-h-[75vh] flex flex-col items-center justify-center p-6 relative overflow-hidden space-y-10">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] -z-10" />
 
-                <div className="max-w-4xl w-full space-y-12">
-                    <div className="text-center space-y-4">
-                        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                            {loadingStage === 1 ? 'Lighthouse Audit Complete' : 'Analyzing Your Page'}
-                        </h1>
-                        <p className="text-slate-400 text-lg">
-                            {data?.targetUrl || 'Submitting URL...'}
-                        </p>
-                    </div>
+                <div className="text-center space-y-2">
+                    <Badge variant="default" className="gap-1 px-3 py-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {loadingStage === 1 ? 'Lighthouse Audit Complete' : 'Executing Diagnostics'}
+                    </Badge>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                        {loadingStage === 1 ? 'Audit Ready' : 'Analyzing Performance'}
+                    </h1>
+                    <p className="text-sm text-muted-foreground font-mono bg-muted/30 px-3 py-1 rounded-md inline-block border border-border/40">
+                        {data?.targetUrl || 'Target site...'}
+                    </p>
+                </div>
 
-                    <div className="flex flex-col md:flex-row items-center justify-center gap-12">
-                        {/* Circular Loader */}
-                        <div className="relative">
-                            <div className={`w-48 h-48 rounded-full border-4 flex items-center justify-center relative ${loadingStage === 1 ? 'border-green-500/20' : 'border-indigo-500/20'}`}>
-                                {loadingStage === 0 && (
-                                    <div className="absolute inset-0 border-4 border-t-indigo-500 border-r-indigo-500 border-b-transparent border-l-transparent rounded-full animate-spin" />
-                                )}
-                                {loadingStage === 1 && (
-                                    <div className="absolute inset-0 border-4 border-green-500 rounded-full animate-ping opacity-20" />
-                                )}
-
-                                <div className="text-center">
-                                    <h3 className={`text-4xl font-bold ${loadingStage === 1 ? 'text-green-400' : 'text-indigo-400'}`}>
-                                        {loadingStage === 1 ? data?.performance?.score || 0 : '...'}
-                                    </h3>
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 mt-1">
-                                        Performance<br />Score
-                                    </p>
-                                </div>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-10">
+                    <div className="relative">
+                        <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center relative ${loadingStage === 1 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-primary/20 bg-primary/5'}`}>
+                            {loadingStage === 0 && (
+                                <div className="absolute inset-0 border-4 border-t-primary border-r-primary border-b-transparent border-l-transparent rounded-full animate-spin" />
+                            )}
+                            <div className="text-center">
+                                <h3 className={`text-3xl font-bold ${loadingStage === 1 ? 'text-emerald-400' : 'text-primary'}`}>
+                                    {loadingStage === 1 ? data?.performance?.score || 0 : '...'}
+                                </h3>
+                                <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                                    Performance Index
+                                </p>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Metrics Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full md:w-auto">
-                            {/* Core Web Vitals */}
-                            <MetricPlaceholder label="LCP" value={data?.performance?.lcp} loading={loadingStage === 0} delay={0} />
-                            <MetricPlaceholder label="CLS" value={data?.performance?.cls} loading={loadingStage === 0} delay={100} />
-                            <MetricPlaceholder label="INP" value={data?.performance?.inp} loading={loadingStage === 0} delay={200} />
-                            <MetricPlaceholder label="TTFB" value={data?.performance?.ttfb} loading={loadingStage === 0} delay={300} />
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <MetricPlaceholder label="LCP" value={data?.performance?.lcp} loading={loadingStage === 0} />
+                        <MetricPlaceholder label="CLS" value={data?.performance?.cls} loading={loadingStage === 0} />
+                        <MetricPlaceholder label="INP" value={data?.performance?.inp} loading={loadingStage === 0} />
+                        <MetricPlaceholder label="TTFB" value={data?.performance?.ttfb} loading={loadingStage === 0} />
+                    </div>
+                </div>
 
-                            {/* Other Metrics */}
-                            <MetricPlaceholder label="FCP" value={data?.performance?.fcp || '---'} loading={loadingStage === 0} delay={400} />
-                            <MetricPlaceholder label="SI" value={data?.performance?.si || '---'} loading={loadingStage === 0} delay={500} />
-                            <MetricPlaceholder label="TBT" value={data?.performance?.tbt || '---'} loading={loadingStage === 0} delay={600} />
+                <div className="h-12 flex items-center justify-center">
+                    {loadingStage === 1 ? (
+                        <Button
+                            onClick={() => setShowDashboard(true)}
+                            size="lg"
+                            className="rounded-full px-8 shadow-lg shadow-primary/25 gap-2"
+                        >
+                            View Comprehensive Report <ArrowLeft className="w-4 h-4 rotate-180" />
+                        </Button>
+                    ) : (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                            <Activity className="w-4 h-4 text-primary animate-bounce" />
+                            <span>Tracing Web Vitals and API Telemetry...</span>
                         </div>
-                    </div>
-
-                    {/* Action */}
-                    <div className="flex justify-center h-16">
-                        {loadingStage === 1 ? (
-                            <Button
-                                onClick={() => setShowDashboard(true)}
-                                size="lg"
-                                className="animate-fade-in-up px-12 h-14 text-lg rounded-full shadow-xl shadow-indigo-500/20 hover:scale-105 transition-transform"
-                            >
-                                View Full Report <Activity className="ml-2 w-5 h-5" />
-                            </Button>
-                        ) : (
-                            <div className="flex items-center gap-3 text-slate-500 animate-pulse">
-                                <Activity className="w-5 h-5 animate-bounce" />
-                                <span>Gathering Telemetry...</span>
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
             </div>
         );
@@ -168,192 +149,103 @@ const AnalysisResult = () => {
     const isWaitingForTelemetry = data?.status === 'waiting_for_telemetry';
 
     return (
-        <div className="space-y-8 pb-10">
+        <div className="space-y-6 pb-12 animate-in fade-in-50 duration-300">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-border/40">
                 <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                        Analysis Report
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        Performance Audit Report
                     </h1>
-                    <p className="text-slate-400 mt-1">
-                        {data.targetUrl || data.url || 'No URL info'} • <span className="text-slate-500">{data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'Today'}</span>
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                        <span>{data.targetUrl || data.url || 'Target Endpoint'}</span>
+                        <span>•</span>
+                        <span>{data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'Today'}</span>
                     </p>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" className="gap-2">
-                        <Share2 className="w-4 h-4" /> Share
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                        <Share2 className="w-3.5 h-3.5" /> Share
                     </Button>
-                    <Button variant="primary" className="gap-2">
-                        <Download className="w-4 h-4" /> Export PDF
+                    <Button size="sm" className="gap-1.5 text-xs shadow-xs">
+                        <Download className="w-3.5 h-3.5" /> Export Report
                     </Button>
                 </div>
             </div>
 
-            {/* SDK Integration Guide - Only if waiting for telemetry */}
+            {/* SDK Calibration box if waiting for telemetry */}
             {isWaitingForTelemetry && (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden mb-8 shadow-2xl shadow-indigo-500/5">
-                    <div className="bg-indigo-600/10 px-6 py-4 flex items-center justify-between border-b border-slate-800">
+                <Card className="border-primary/30 bg-primary/5 overflow-hidden">
+                    <CardHeader className="py-4 px-6 bg-primary/10 border-b border-primary/20 flex flex-row items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-indigo-400" />
-                            <h2 className="text-xl font-bold text-slate-100">Complete Calibration</h2>
+                            <Activity className="w-4 h-4 text-primary" />
+                            <CardTitle className="text-sm font-semibold">Backend SDK Telemetry Setup</CardTitle>
                         </div>
-                        <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-                            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
-                            WAITING FOR TELEMETRY
+                        <Badge variant="warning" className="text-[11px] gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            Waiting for Telemetry
+                        </Badge>
+                    </CardHeader>
+
+                    <CardContent className="p-6 space-y-4 text-xs">
+                        <p className="text-muted-foreground leading-relaxed">
+                            To generate deep AI query diagnostics, link your Express backend using the micro-SDK:
+                        </p>
+                        <div className="p-3 bg-background/80 rounded-lg border border-border/50 font-mono text-muted-foreground flex justify-between items-center">
+                            <code>npm install ai-perf-sdk@latest</code>
                         </div>
-                    </div>
 
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-6">
-                            <div>
-                                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Goal</h3>
-                                <p className="text-slate-300 text-sm leading-relaxed">
-                                    Capture real-world traffic data (latency, status codes, and errors) to generate deep AI recommendations for your backend services.
-                                </p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-indigo-400 font-bold text-sm">1</div>
-                                    <div className="flex-1">
-                                        <h4 className="text-slate-200 font-medium mb-1">Install the SDK</h4>
-                                        <div className="bg-black/40 p-3 rounded-lg border border-slate-800 font-mono text-sm group flex justify-between items-center">
-                                            <code className="text-indigo-300">npm install ai-perf-sdk@latest</code>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-indigo-400 font-bold text-sm">2</div>
-                                    <div className="flex-1">
-                                        <h4 className="text-slate-200 font-medium mb-1">Initialize at Entry Point</h4>
-                                        <p className="text-slate-500 text-xs mb-3">Paste this at the VERY TOP of your `index.js` or `app.js` file before any other imports.</p>
-                                        <div className="bg-black/40 p-4 rounded-lg border border-slate-800 font-mono text-xs text-slate-300 relative group">
-                                            <pre className="overflow-x-auto">
-                                                {`import { startSDK, shutdownSDK } from 'ai-perf-sdk';
+                        <div className="p-4 bg-background/90 rounded-lg border border-border/60 font-mono text-foreground overflow-x-auto">
+                            <pre className="text-[11px] leading-relaxed text-muted-foreground">
+                                {`import { startSDK } from 'ai-perf-sdk';
 
 startSDK({
-  serviceName: 'user-service',
+  serviceName: 'backend-api',
   endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',
-  headers: {
-    'x-session-id': '${id}'
-  }
-});
-
-const shutdown = async () => {
-    console.log("[SDK-INIT] Cleaning up...");
-    await shutdownSDK();
-    process.exit(0);
-};
-
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);`}
-                                            </pre>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-indigo-400 font-bold text-sm">3</div>
-                                    <div className="flex-1">
-                                        <h4 className="text-slate-200 font-medium mb-1">Verify Activity</h4>
-                                        <p className="text-slate-500 text-xs">Refresh your website and navigate around. You should see "Captured APIs" increase below.</p>
-                                    </div>
-                                </div>
-                            </div>
+  headers: { 'x-session-id': '${id}' }
+});`}
+                            </pre>
                         </div>
 
-                        <div className="bg-slate-950/50 rounded-xl border border-slate-800 p-6 flex flex-col justify-between">
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Live Status</h3>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`w-2 h-2 rounded-full ${data?.metrics?.api?.length > 0 ? 'bg-green-500 animate-pulse outline outline-offset-2 outline-green-500/20' : 'bg-slate-700'}`}></span>
-                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{data?.metrics?.api?.length > 0 ? 'Data Receiving' : 'No Data Yet'}</span>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-slate-900/80 p-4 rounded-lg border border-slate-800/50 text-center">
-                                        <div className="text-2xl font-bold text-slate-100">{data?.metrics?.api?.length || 0}</div>
-                                        <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Captured Routes</div>
-                                    </div>
-                                    <div className="bg-slate-900/80 p-4 rounded-lg border border-slate-800/50 text-center">
-                                        <div className="text-2xl font-bold text-slate-100">{loadingStage === 1 ? '100%' : '0%'}</div>
-                                        <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">LH Completion</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 pt-8">
-                                {data?.metrics?.api?.length > 0 ? (
-                                    <Button
-                                        onClick={handleGenerateAI}
-                                        className="w-full bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-500/20 py-8 text-lg rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-all group"
-                                    >
-                                        <Brain className="w-6 h-6 animate-pulse group-hover:rotate-12 transition-transform" />
-                                        Generate Final AI Insights
-                                    </Button>
-                                ) : (
-                                    <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 text-center">
-                                        <p className="text-xs text-slate-500 italic">Generate insights once telemetry data is captured.</p>
-                                    </div>
-                                )}
-                            </div>
+                        <div className="flex items-center justify-between pt-2">
+                            <span className="text-xs text-muted-foreground">Captured API Routes: <strong className="text-foreground">{data?.metrics?.api?.length || 0}</strong></span>
+                            {data?.metrics?.api?.length > 0 && (
+                                <Button size="sm" onClick={handleGenerateAI} className="gap-2">
+                                    <Brain className="w-4 h-4" /> Generate Final AI Insights
+                                </Button>
+                            )}
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             )}
 
+            {/* Tabbed view */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList>
+                    <TabsTrigger value="performance">Performance</TabsTrigger>
+                    <TabsTrigger value="seo">SEO Audit</TabsTrigger>
+                    <TabsTrigger value="backend">API Telemetry</TabsTrigger>
+                    <TabsTrigger value="ai">AI Insights</TabsTrigger>
+                </TabsList>
 
-            {/* Tabs */}
-            <div className="flex border-b border-slate-800">
-                {['performance', 'seo', 'backend', 'ai'].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-6 py-3 font-medium text-sm transition-all relative ${activeTab === tab
-                            ? 'text-indigo-400'
-                            : 'text-slate-400 hover:text-slate-200'
-                            }`}
-                    >
-                        <span className="capitalize">{tab === 'ai' ? 'AI Insights' : tab}</span>
-                        {activeTab === tab && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {/* Content */}
-            <div className="animate-fade-in">
-                {activeTab === 'performance' && (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 auto-rows-fr">
-                            <MetricCard title="Performance Score" value={data.performance.score} trend="neutral" icon={Zap} description="Composite Weight" />
-                            <MetricCard title="LCP" value={data.performance.lcp} trend={parseFloat(data.performance.lcp) > 2.5 ? 'down' : 'up'} icon={Activity} description="Paint Benchmark" />
-                            <MetricCard title="CLS" value={data.performance.cls} trend={parseFloat(data.performance.cls) > 0.1 ? 'down' : 'up'} icon={Activity} description="Visual Stability" />
-                            <MetricCard title="TTFB" value={data.performance.ttfb} description="Endpoint Response" icon={Server} />
-                        </div>
-                        <Card>
-                            <CardHeader><CardTitle>Core Web Vitals</CardTitle></CardHeader>
-                            <CardContent>
-                                <div className="h-64 flex items-center justify-center border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
-                                    Chart Placeholder (Integrate Recharts/Chart.js here)
-                                </div>
-                            </CardContent>
-                        </Card>
+                <TabsContent value="performance" className="space-y-6 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <MetricCard title="Performance Score" value={data.performance.score || 0} trend="neutral" icon={Zap} description="Weighted aggregate" />
+                        <MetricCard title="LCP (Largest Contentful)" value={data.performance.lcp || '0s'} trend={parseFloat(data.performance.lcp) > 2.5 ? 'down' : 'up'} icon={Activity} description="Main element load" />
+                        <MetricCard title="CLS (Layout Shift)" value={data.performance.cls || 0} trend={parseFloat(data.performance.cls) > 0.1 ? 'down' : 'up'} icon={Activity} description="Visual stability" />
+                        <MetricCard title="TTFB (Time to First Byte)" value={data.performance.ttfb || '0ms'} description="Server response time" icon={Server} />
                     </div>
-                )}
+                </TabsContent>
 
-                {activeTab === 'seo' && (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <MetricCard title="SEO Score" value={data.seo.score} icon={Globe} trend="up" />
-                            <Card className="h-full">
-                                <CardHeader><CardTitle>Issues Found</CardTitle></CardHeader>
-                                <CardContent className="space-y-4">
-                                    {data.seo.issues.map((issue, idx) => (
+                <TabsContent value="seo" className="space-y-6 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <MetricCard title="SEO Score" value={data.seo.score || 0} icon={Globe} trend="up" description="Search engine optimization index" />
+                        <Card className="md:col-span-2">
+                            <CardHeader className="py-4 px-6">
+                                <CardTitle className="text-base font-semibold">SEO Recommendations</CardTitle>
+                            </CardHeader>
+                            <CardContent className="px-6 pb-6 space-y-3">
+                                {data.seo.issues && data.seo.issues.length > 0 ? (
+                                    data.seo.issues.map((issue, idx) => (
                                         <RecommendationCard
                                             key={idx}
                                             title={issue.title}
@@ -361,74 +253,64 @@ process.on("SIGTERM", shutdown);`}
                                             severity={issue.severity}
                                             category="SEO"
                                         />
-                                    ))}
-                                </CardContent>
-                            </Card>
-                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-xs text-muted-foreground py-6 text-center italic">No SEO issues detected.</p>
+                                )}
+                            </CardContent>
+                        </Card>
                     </div>
-                )}
+                </TabsContent>
 
-                {activeTab === 'backend' && (
-                    <div className="space-y-6">
-                        <ApiTable data={data.api} />
-                    </div>
-                )}
+                <TabsContent value="backend" className="pt-2">
+                    <ApiTable data={data.api} />
+                </TabsContent>
 
-                {activeTab === 'ai' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="col-span-full">
-                            <div className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 p-6 rounded-xl border border-indigo-500/20">
-                                <h3 className="text-xl font-bold text-slate-100 mb-2 flex items-center gap-2">
-                                    <Brain className="w-6 h-6 text-purple-400" />
-                                    AI Executive Summary
-                                </h3>
-                                <p className="text-slate-300 leading-relaxed">
-                                    {data.ai && data.ai.length > 0
-                                        ? "Detailed AI breakdown of your system performance is available below. Focus on the High Severity findings for immediate impact."
-                                        : "Automated analysis in progress. Once telemetry data is captured and Lighthouse audit completes, real insights will appear here."}
-                                </p>
+                <TabsContent value="ai" className="space-y-6 pt-2">
+                    <Card className="bg-gradient-to-r from-primary/10 via-card to-card border-primary/20">
+                        <CardContent className="p-6 space-y-2">
+                            <div className="flex items-center gap-2 text-primary font-semibold text-sm">
+                                <Brain className="w-5 h-5" />
+                                AI Executive Diagnostics
                             </div>
-                        </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                {data.ai && data.ai.length > 0
+                                    ? "Prioritized AI optimizations targeting slow database queries, render blocking resources, and unminified bundles."
+                                    : "Telemetry data captured. Run AI generation to get code-level suggestions."}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <div className="grid grid-cols-1 gap-4">
                         {data.ai && data.ai.length > 0 ? (
                             data.ai.map((insight, idx) => (
-                                <RecommendationCard
-                                    key={idx}
-                                    {...insight}
-                                />
+                                <RecommendationCard key={idx} {...insight} />
                             ))
                         ) : (
-                            <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-800 rounded-xl">
-                                <Activity className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                                <p className="text-slate-500">No deep AI insights found for this session yet.</p>
-                                <Button
-                                    onClick={handleGenerateAI}
-                                    variant="outline"
-                                    size="sm"
-                                    className="mt-4"
-                                >
-                                    Force Regenerate
+                            <div className="py-12 text-center border border-dashed border-border/70 rounded-xl space-y-3">
+                                <Activity className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                                <p className="text-xs text-muted-foreground">No AI recommendations generated yet.</p>
+                                <Button onClick={handleGenerateAI} variant="outline" size="sm" className="gap-1.5 text-xs">
+                                    <RefreshCw className="w-3.5 h-3.5" /> Trigger AI Diagnostic
                                 </Button>
                             </div>
                         )}
                     </div>
-                )}
-            </div>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 };
 
-const MetricPlaceholder = ({ label, value, loading, delay }) => (
-    <div
-        className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center min-w-[100px] transition-all duration-500"
-        style={{ animationDelay: `${delay}ms` }}
-    >
-        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{label}</span>
+const MetricPlaceholder = ({ label, value, loading }) => (
+    <Card className="p-3 text-center min-w-[100px] border-border/60">
+        <span className="text-[11px] font-medium text-muted-foreground block mb-1">{label}</span>
         {loading ? (
-            <div className="h-6 w-16 bg-slate-800 rounded animate-pulse" />
+            <div className="h-5 w-14 bg-muted rounded animate-pulse mx-auto" />
         ) : (
-            <span className="text-xl font-mono font-bold text-slate-200 animate-fade-in">{value || '--'}</span>
+            <span className="text-base font-bold text-foreground font-mono">{value || '--'}</span>
         )}
-    </div>
+    </Card>
 );
 
 export default AnalysisResult;
