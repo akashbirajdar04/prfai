@@ -27,9 +27,13 @@ const startAnalysis = asyncHandler(async (req, res) => {
 // @desc    Get session details
 const getAnalysis = asyncHandler(async (req, res) => {
    const session = await Session.findById(req.params.id);
-   if (!session || session.userId.toString() !== req.user._id.toString()) {
+   if (!session) {
       res.status(404);
-      throw new Error('Session not found or not authorized');
+      throw new Error('Session not found');
+   }
+   if (session.userId && req.user?._id && session.userId.toString() !== req.user._id.toString()) {
+      res.status(403);
+      throw new Error('Not authorized to access this session');
    }
    res.json(session);
 });
