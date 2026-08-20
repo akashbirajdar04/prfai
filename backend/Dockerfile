@@ -19,16 +19,17 @@ RUN apt-get update && apt-get install -y \
 # 3️⃣ Tell Puppeteer to use system Chrome
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV CHROME_PATH=/usr/bin/chromium
 
 # 4️⃣ App directory
 WORKDIR /app
 
 # 5️⃣ Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --production=false
 
 # 6️⃣ Copy source code
 COPY . .
 
-# 7️⃣ Start the app
-CMD ["npm", "start"]
+# 7️⃣ Start Node directly to handle SIGTERM gracefully
+CMD ["node", "src/index.js"]
