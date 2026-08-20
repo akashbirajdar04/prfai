@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Calendar, Globe, ArrowRight, Search } from 'lucide-react';
+import { Input } from '../components/ui/Input';
+import { Calendar, Globe, ArrowRight, Search, Activity, Clock } from 'lucide-react';
 import analysisService from '../services/analysisService';
 
 const History = () => {
     const [sessions, setSessions] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -25,6 +27,8 @@ const History = () => {
                 setSessions(formatted);
             } catch (error) {
                 console.error("Failed to fetch history", error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchHistory();
@@ -35,82 +39,80 @@ const History = () => {
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-6 animate-in fade-in-50 duration-300">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2 border-b border-border/40">
                 <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
                         Analysis History
                     </h1>
-                    <p className="text-slate-400 mt-1">
-                        View details from your past performance audits.
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                        View results and historical telemetry from previous performance audits.
                     </p>
                 </div>
-                <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                    <input
+                <div className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
                         type="text"
-                        placeholder="Search URL..."
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-indigo-500"
+                        placeholder="Search by URL..."
+                        className="pl-9 h-9 text-xs"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
 
-            <Card hoverEffect={false}>
+            <Card hoverEffect={false} className="overflow-hidden border-border/70 shadow-sm">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-400 border-collapse">
-                        <thead className="bg-white/5 text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] border-b border-slate-800/60">
+                    <table className="w-full text-left text-sm text-foreground border-collapse">
+                        <thead className="bg-muted/40 text-muted-foreground font-semibold text-xs border-b border-border/40">
                             <tr>
-                                <th className="px-8 py-5">Target Endpoint</th>
-                                <th className="px-8 py-5">Date Analyzed</th>
-                                <th className="px-8 py-5">System Status</th>
-                                <th className="px-8 py-5 text-center">Perf Index</th>
-                                <th className="px-8 py-5 text-right">Actions</th>
+                                <th className="px-6 py-3.5">Target Endpoint</th>
+                                <th className="px-6 py-3.5">Date Analyzed</th>
+                                <th className="px-6 py-3.5">Status</th>
+                                <th className="px-6 py-3.5 text-center">Perf Index</th>
+                                <th className="px-6 py-3.5 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/60">
+                        <tbody className="divide-y divide-border/40">
                             {filteredSessions.map((session) => (
-                                <tr key={session.id} className="hover:bg-white/5 transition-all duration-300 group">
-                                    <td className="px-8 py-5 font-black text-slate-100 uppercase text-xs tracking-widest group-hover:text-indigo-400 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <Globe className="w-4 h-4 text-slate-600 group-hover:text-indigo-500 transition-colors" />
-                                            {session.url}
+                                <tr key={session.id} className="hover:bg-accent/40 transition-colors group">
+                                    <td className="px-6 py-4 font-medium text-sm text-foreground group-hover:text-primary transition-colors">
+                                        <div className="flex items-center gap-2.5">
+                                            <Globe className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                            <span className="truncate max-w-xs">{session.url}</span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-5">
-                                        <div className="flex items-center gap-2 font-bold text-[10px] uppercase text-slate-500">
-                                            <Calendar className="w-3.5 h-3.5" />
+                                    <td className="px-6 py-4 text-xs text-muted-foreground">
+                                        <div className="flex items-center gap-1.5">
+                                            <Calendar className="w-3.5 h-3.5 text-muted-foreground/70" />
                                             {session.date}
                                         </div>
                                     </td>
-                                    <td className="px-8 py-5">
-                                        <div className="flex">
-                                            <Badge variant={session.status === 'completed' ? 'success' : 'danger'} className="uppercase text-[10px] font-black tracking-widest px-3 py-1">
-                                                {session.status}
-                                            </Badge>
-                                        </div>
+                                    <td className="px-6 py-4">
+                                        <Badge variant={session.status === 'completed' ? 'success' : 'danger'}>
+                                            {session.status}
+                                        </Badge>
                                     </td>
-                                    <td className="px-8 py-5 text-center">
+                                    <td className="px-6 py-4 text-center">
                                         {session.score > 0 ? (
-                                            <span className={`text-xl font-black tabular-nums ${session.score >= 90 ? 'text-green-400' :
-                                                session.score >= 50 ? 'text-amber-400' : 'text-red-400'
+                                            <span className={`text-base font-bold tabular-nums ${session.score >= 90 ? 'text-emerald-400' :
+                                                session.score >= 50 ? 'text-amber-400' : 'text-rose-400'
                                                 }`}>
                                                 {session.score}
                                             </span>
-                                        ) : <span className="text-slate-700 font-black">---</span>}
+                                        ) : <span className="text-muted-foreground text-xs">N/A</span>}
                                     </td>
-                                    <td className="px-8 py-5 text-right">
-                                        <Button size="sm" variant="ghost" className="rounded-full text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 font-bold uppercase text-[10px] tracking-widest py-2 px-4" onClick={() => navigate(`/analysis/${session.id}`)}>
-                                            Explore <ArrowRight className="w-3.5 h-3.5 ml-2" />
+                                    <td className="px-6 py-4 text-right">
+                                        <Button size="sm" variant="ghost" className="text-xs text-primary gap-1 font-medium" onClick={() => navigate(`/analysis/${session.id}`)}>
+                                            Explore <ArrowRight className="w-3.5 h-3.5" />
                                         </Button>
                                     </td>
                                 </tr>
                             ))}
                             {filteredSessions.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-24 text-center text-slate-500 font-bold uppercase text-xs tracking-widest italic">
-                                        No metrics found matching your query.
+                                    <td colSpan={5} className="px-6 py-16 text-center text-muted-foreground text-xs italic">
+                                        {loading ? "Loading history..." : "No analysis metrics found matching your query."}
                                     </td>
                                 </tr>
                             )}

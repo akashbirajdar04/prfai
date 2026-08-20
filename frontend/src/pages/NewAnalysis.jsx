@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Play, Globe, Server, Brain, CheckCircle2 } from 'lucide-react';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
+import { Play, Globe, Server, Brain, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import analysisService from '../services/analysisService';
 
 const steps = [
-    { id: 1, name: 'Lighthouse Analysis', icon: Globe, description: 'Auditing performance & SEO...' },
-    { id: 2, name: 'Backend Telemetry', icon: Server, description: 'Measuring API latency...' },
-    { id: 3, name: 'AI Optimization', icon: Brain, description: 'Generating insights...' },
+    { id: 1, name: 'Lighthouse Audit', icon: Globe, description: 'Analyzing FCP, LCP, CLS & Core Web Vitals...' },
+    { id: 2, name: 'Backend Telemetry', icon: Server, description: 'Measuring API latency & HTTP TTFB...' },
+    { id: 3, name: 'AI Optimization', icon: Brain, description: 'Generating actionable optimization code snippets...' },
 ];
 
 const NewAnalysis = () => {
@@ -23,14 +25,9 @@ const NewAnalysis = () => {
         if (!url) return;
 
         setAnalyzing(true);
-        // Immediate navigation to analysis page where real progress happens
         try {
-            // Actual API call
             const response = await analysisService.startAnalysis(url);
-
-            // Navigate to results with real ID
             navigate(`/analysis/${response.data.sessionId}`);
-
         } catch (error) {
             console.error("Analysis failed", error);
             setAnalyzing(false);
@@ -39,32 +36,39 @@ const NewAnalysis = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto py-12">
-            <div className="text-center mb-10">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent mb-4">
-                    Start New Analysis
+        <div className="max-w-2xl mx-auto py-8 space-y-8 animate-in fade-in-50 duration-300">
+            <div className="text-center space-y-2">
+                <Badge variant="default" className="gap-1.5 py-1 px-3">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Deep Stack Diagnostics
+                </Badge>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                    Start New Performance Analysis
                 </h1>
-                <p className="text-slate-400">
-                    Enter the URL of the website you want to analyze. Our AI will audit performance, SEO, and backend latency.
+                <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                    Enter any public website URL to test Core Web Vitals, API response latency, and AI code recommendations.
                 </p>
             </div>
 
-            <Card className="mb-8">
-                <CardContent>
-                    <form onSubmit={handleStartAnalysis} className="flex gap-4">
-                        <input
-                            type="text"
-                            required
-                            placeholder="example.com"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            disabled={analyzing}
-                            className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
-                        />
-                        <Button type="submit" disabled={analyzing || !url} size="lg" className="min-w-[140px]">
+            <Card className="shadow-lg border-border/80">
+                <CardContent className="p-6">
+                    <form onSubmit={handleStartAnalysis} className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1 relative">
+                            <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                type="text"
+                                required
+                                placeholder="https://example.com"
+                                value={url}
+                                onChange={(e) => setUrl(e.target.value)}
+                                disabled={analyzing}
+                                className="pl-10 h-11"
+                            />
+                        </div>
+                        <Button type="submit" disabled={analyzing || !url} loading={analyzing} size="lg" className="h-11 px-6 gap-2">
                             {analyzing ? 'Analyzing...' : (
                                 <>
-                                    Start <Play className="w-4 h-4 ml-2 fill-current" />
+                                    Run Audit <Play className="w-4 h-4 fill-current" />
                                 </>
                             )}
                         </Button>
@@ -73,41 +77,41 @@ const NewAnalysis = () => {
             </Card>
 
             {analyzing && (
-                <div className="space-y-6">
+                <div className="space-y-4">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Diagnostic Sequence</h3>
                     {steps.map((step) => {
                         const Icon = step.icon;
                         const isCompleted = completedSteps.includes(step.id);
-                        const isCurrent = currentStep === step.id;
-                        const isPending = !isCompleted && !isCurrent;
+                        const isCurrent = currentStep === step.id || (!isCompleted && step.id === 1);
 
                         return (
-                            <div
+                            <Card
                                 key={step.id}
-                                className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-500 ${isCurrent
-                                    ? 'bg-indigo-900/20 border-indigo-500/50 scale-105 shadow-lg shadow-indigo-500/10'
-                                    : isCompleted
-                                        ? 'bg-slate-900/50 border-slate-800 opacity-60'
-                                        : 'bg-transparent border-transparent opacity-30'
+                                className={`transition-all duration-300 ${isCurrent
+                                    ? 'border-primary/40 bg-primary/5 shadow-sm'
+                                    : 'border-border/40 opacity-60'
                                     }`}
                             >
-                                <div className={`p-3 rounded-full transition-colors ${isCompleted || isCurrent ? 'bg-indigo-500/20' : 'bg-slate-800'
-                                    }`}>
-                                    {isCompleted ? (
-                                        <CheckCircle2 className="w-6 h-6 text-green-400" />
-                                    ) : (
-                                        <Icon className={`w-6 h-6 ${isCurrent ? 'text-indigo-400 animate-pulse' : 'text-slate-400'}`} />
+                                <CardContent className="p-4 flex items-center gap-4">
+                                    <div className={`p-2.5 rounded-lg ${isCompleted || isCurrent ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                                        }`}>
+                                        {isCompleted ? (
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                                        ) : (
+                                            <Icon className={`w-5 h-5 ${isCurrent ? 'animate-pulse' : ''}`} />
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="text-sm font-semibold text-foreground">
+                                            {step.name}
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+                                    </div>
+                                    {isCurrent && (
+                                        <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                                     )}
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className={`font-semibold ${isCurrent ? 'text-indigo-300' : 'text-slate-300'}`}>
-                                        {step.name}
-                                    </h3>
-                                    <p className="text-sm text-slate-500">{step.description}</p>
-                                </div>
-                                {isCurrent && (
-                                    <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-                                )}
-                            </div>
+                                </CardContent>
+                            </Card>
                         );
                     })}
                 </div>

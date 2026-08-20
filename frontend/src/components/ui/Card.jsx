@@ -1,43 +1,58 @@
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import * as React from "react";
+import { cn } from "../../lib/utils";
 
-export function Card({ className, children, hoverEffect = true, ...props }) {
-    return (
-        <div
-            className={twMerge(
-                clsx(
-                    "bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-2xl overflow-hidden shadow-xl transition-all duration-300",
-                    hoverEffect && "hover:border-indigo-500/40 hover:shadow-indigo-500/5",
-                    className
-                )
-            )}
-            {...props}
-        >
-            {children}
-        </div>
-    );
-}
+const Card = React.forwardRef(({ className, hoverEffect = false, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn(
+            "rounded-xl border border-border/70 bg-card/60 text-card-foreground shadow-sm backdrop-blur-sm transition-all duration-200",
+            hoverEffect && "hover:border-border hover:shadow-md hover:bg-card/80",
+            className
+        )}
+        {...props}
+    />
+));
+Card.displayName = "Card";
 
-export function CardHeader({ className, children, ...props }) {
-    return (
-        <div className={twMerge(clsx("px-8 py-5 border-b border-slate-800/60 bg-white/5", className))} {...props}>
-            {children}
-        </div>
-    );
-}
+const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn("flex flex-col space-y-1.5 p-6 border-b border-border/40", className)}
+        {...props}
+    />
+));
+CardHeader.displayName = "CardHeader";
 
-export function CardTitle({ className, children, ...props }) {
-    return (
-        <h3 className={twMerge(clsx("text-lg font-bold text-slate-100 tracking-tight", className))} {...props}>
-            {children}
-        </h3>
-    );
-}
+const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
+    <h3
+        ref={ref}
+        className={cn("text-lg font-semibold leading-none tracking-tight text-foreground", className)}
+        {...props}
+    />
+));
+CardTitle.displayName = "CardTitle";
 
-export function CardContent({ className, children, ...props }) {
-    return (
-        <div className={twMerge(clsx("p-8", className))} {...props}>
-            {children}
-        </div>
-    );
-}
+const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
+    <p
+        ref={ref}
+        className={cn("text-sm text-muted-foreground leading-relaxed", className)}
+        {...props}
+    />
+));
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef(({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("p-6", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn("flex items-center p-6 pt-0 border-t border-border/40", className)}
+        {...props}
+    />
+));
+CardFooter.displayName = "CardFooter";
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

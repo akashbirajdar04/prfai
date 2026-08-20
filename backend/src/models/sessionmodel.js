@@ -24,8 +24,8 @@ const AnalysisSessionSchema = new mongoose.Schema(
 
     // Cloudinary artifacts (files)
     artifacts: {
-      lighthouseReportUrl: { type: String },
-      endpointsUrl: { type: String },
+      ReportUrl: { type: String },
+      endpointsUrllighthouse: { type: String },
       llmResponseUrl: { type: String }
     },
 

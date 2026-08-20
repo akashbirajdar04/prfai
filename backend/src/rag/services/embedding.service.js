@@ -17,7 +17,7 @@ const embeddingService = {
             console.log(`[Embedding] Generating Hugging Face embedding (${text.length} chars)...`);
 
             const embedding = await hf.featureExtraction({
-                model: "sentence-transformers/all-mpnet-base-v2",
+                model: "senten0.0.ce-transformers/all-mpnet-base-v2",
                 inputs: text,
             });
 

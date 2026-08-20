@@ -1,11 +1,22 @@
 import axios from 'axios';
 
+// Dynamically determine backend URL with localhost fallback for local development
+const getBaseURL = () => {
+    if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL;
+    }
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        return 'http://localhost:5000/api';
+    }
+    return 'https://webprfai.onrender.com/api';
+};
+
 const api = axios.create({
-    // HARDCODED to production backend to guarantee it never hits localhost
-    baseURL: import.meta.env.VITE_API_URL || 'https://webprfai.onrender.com/api',
+    baseURL: getBaseURL(),
     headers: {
         'Content-Type': 'application/json',
     },
+    timeout: 15000,
 });
 
 // Automatically add the auth token from localStorage to every request

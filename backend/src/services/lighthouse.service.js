@@ -1,27 +1,62 @@
-
-
 const runLighthouse = async (url) => {
     // Dynamic import for ESM-only lighthouse package
     const { default: lighthouse } = await import('lighthouse');
-    const puppeteer = require('puppeteer');
+    const chromeLauncher = require('chrome-launcher');
     const fs = require('fs');
 
-    console.log(`[Lighthouse] Launching Puppeteer with executable: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+    let puppeteer = null;
+    try {
+        puppeteer = require('puppeteer');
+    } catch (e) {
+        try {
+            puppeteer = require('puppeteer-core');
+        } catch (e2) {
+            puppeteer = null;
+        }
+    }
 
-    const browser = await puppeteer.launch({
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-        headless: "new",
-        args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--remote-debugging-port=9222"
-        ]
-    });
+    let browser = null;
+    let chromeInstance = null;
+    let port = 9222;
 
     try {
-        // Connect Lighthouse to the existing browser port
-        const port = 9222;
+        if (puppeteer) {
+            console.log(`[Lighthouse] Launching Puppeteer browser...`);
+            const launchOptions = {
+                headless: "new",
+                args: [
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--remote-debugging-port=9222"
+                ]
+            };
+            if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+                launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+            } else if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) {
+                launchOptions.executablePath = process.env.CHROME_PATH;
+            }
+
+            try {
+                browser = await puppeteer.launch(launchOptions);
+            } catch (puppeteerErr) {
+                console.warn("[Lighthouse] Puppeteer launch failed, falling back to chrome-launcher:", puppeteerErr.message);
+                browser = null;
+            }
+        }
+
+        if (!browser) {
+            console.log(`[Lighthouse] Launching Chrome via chrome-launcher...`);
+            const launchOpts = {
+                chromeFlags: ['--headless', '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+            };
+            if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) {
+                launchOpts.chromePath = process.env.CHROME_PATH;
+            }
+            chromeInstance = await chromeLauncher.launch(launchOpts);
+            port = chromeInstance.port;
+        }
+
         const options = {
             logLevel: 'info',
             output: 'json',
@@ -32,13 +67,12 @@ const runLighthouse = async (url) => {
         console.log(`[Lighthouse] Running analysis for ${url} on port ${port}`);
         const runnerResult = await lighthouse(url, options);
 
-        // Extract key metrics
         const report = JSON.parse(runnerResult.report);
-        const audits = report.audits;
+        const audits = report.audits || {};
 
         const metrics = {
-            performanceScore: (report.categories?.performance?.score || 0) * 100,
-            seoScore: (report.categories?.seo?.score || 0) * 100,
+            performanceScore: Math.round((report.categories?.performance?.score || 0) * 100),
+            seoScore: Math.round((report.categories?.seo?.score || 0) * 100),
             lcp: audits['largest-contentful-paint']?.displayValue || 'N/A',
             cls: audits['cumulative-layout-shift']?.displayValue || 'N/A',
             inp: audits['interaction-to-next-paint']?.displayValue || 'N/A',
@@ -49,7 +83,6 @@ const runLighthouse = async (url) => {
         };
 
         console.log(`[Lighthouse] Extracted Metrics:`, metrics);
-
         return { rawReport: report, metrics };
 
     } catch (error) {
@@ -57,8 +90,12 @@ const runLighthouse = async (url) => {
         throw error;
     } finally {
         if (browser) {
-            await browser.close();
-            console.log("[Lighthouse] Browser closed.");
+            await browser.close().catch(() => {});
+            console.log("[Lighthouse] Puppeteer browser closed.");
+        }
+        if (chromeInstance) {
+            await chromeInstance.kill().catch(() => {});
+            console.log("[Lighthouse] Chrome launcher instance killed.");
         }
     }
 };
