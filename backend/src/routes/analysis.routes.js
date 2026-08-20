@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, query } = require('express-validator');
 const validate = require('../middleware/validate');
 const { startAnalysis, getAnalysis, getHistory, generateAI, compareSessions, getDashboardStats } = require('../controllers/analysis.controller');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, optionalProtect } = require('../middleware/authMiddleware');
 
 const startSchema = [
     body('url').trim().notEmpty().withMessage('URL is required'),
@@ -22,10 +22,10 @@ const historySchema = [
 ];
 
 router.post('/start', protect, startSchema, startAnalysis);
-router.post('/compare', protect, compareSchema, compareSessions); // A/B Mode
-router.get('/stats', protect, getDashboardStats); // Dashboard summary
+router.post('/compare', protect, compareSchema, compareSessions);
+router.get('/stats', protect, getDashboardStats);
 router.post('/:id/ai', protect, generateAI);
 router.get('/history', protect, historySchema, getHistory);
-router.get('/:id', protect, getAnalysis);
+router.get('/:id', optionalProtect, getAnalysis);
 
 module.exports = router;

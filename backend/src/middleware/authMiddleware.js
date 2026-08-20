@@ -10,18 +10,12 @@ const protect = asyncHandler(async (req, res, next) => {
         req.headers.authorization.startsWith('Bearer')
     ) {
         try {
-            // Get token from header
             token = req.headers.authorization.split(' ')[1];
-
-            // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-
-            // Get user from the token
             req.user = await User.findById(decoded.id).select('-password');
-
-            next();
+            return next();
         } catch (error) {
-            console.error(error);
+            console.error('[Auth] Invalid token:', error.message);
             res.status(401);
             throw new Error('Not authorized');
         }
@@ -33,4 +27,22 @@ const protect = asyncHandler(async (req, res, next) => {
     }
 });
 
-module.exports = { protect };
+const optionalProtect = asyncHandler(async (req, res, next) => {
+    let token;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+            req.user = await User.findById(decoded.id).select('-password');
+        } catch (error) {
+            console.warn('[Auth] Optional token check failed, continuing as guest:', error.message);
+        }
+    }
+    next();
+});
+
+module.exports = { protect, optionalProtect };

@@ -20,9 +20,14 @@ const AnalysisResult = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        let isMounted = true;
+        let timerId = null;
+
         const fetchData = async () => {
             try {
                 const response = await analysisService.getSessionDetails(id);
+                if (!isMounted) return;
+
                 const currentData = response.data;
                 console.log(`[Frontend] Received session data:`, currentData);
                 const backendMetrics = currentData.metrics || {};
@@ -39,21 +44,25 @@ const AnalysisResult = () => {
 
                 if (currentData.status === 'completed') {
                     setLoadingStage(1);
-                } else if (currentData.status === 'waiting_for_telemetry') {
-                    setLoadingStage(1);
-                    setTimeout(fetchData, 3000);
                 } else if (currentData.status === 'failed') {
                     setError('Analysis failed.');
                 } else {
-                    setTimeout(fetchData, 2000);
+                    setLoadingStage(1);
+                    timerId = setTimeout(fetchData, 3000);
                 }
             } catch (err) {
+                if (!isMounted) return;
                 console.error(err);
                 setError('Failed to load analysis.');
             }
         };
 
         fetchData();
+
+        return () => {
+            isMounted = false;
+            if (timerId) clearTimeout(timerId);
+        };
     }, [id]);
 
     const handleGenerateAI = async () => {
