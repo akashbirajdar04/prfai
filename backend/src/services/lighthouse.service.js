@@ -29,7 +29,9 @@ const runLighthouse = async (url) => {
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
                     "--disable-dev-shm-usage",
-                    "--remote-debugging-port=9222"
+                    "--disable-gpu",
+                    "--no-zygote",
+                    "--remote-debugging-port=0"
                 ]
             };
             if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
@@ -40,6 +42,13 @@ const runLighthouse = async (url) => {
 
             try {
                 browser = await puppeteer.launch(launchOptions);
+                try {
+                    const wsEndpoint = browser.wsEndpoint();
+                    const urlObj = new URL(wsEndpoint);
+                    port = parseInt(urlObj.port, 10);
+                } catch (wsErr) {
+                    port = 9222;
+                }
             } catch (puppeteerErr) {
                 console.warn("[Lighthouse] Puppeteer launch failed, falling back to chrome-launcher:", puppeteerErr.message);
                 browser = null;
@@ -49,7 +58,7 @@ const runLighthouse = async (url) => {
         if (!browser) {
             console.log(`[Lighthouse] Launching Chrome via chrome-launcher...`);
             const launchOpts = {
-                chromeFlags: ['--headless', '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+                chromeFlags: ['--headless', '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
             };
             if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) {
                 launchOpts.chromePath = process.env.CHROME_PATH;

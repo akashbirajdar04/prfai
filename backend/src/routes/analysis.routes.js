@@ -21,7 +21,7 @@ const historySchema = [
     validate
 ];
 
-router.post('/start', protect, startSchema, startAnalysis);
+router.post('/start', optionalProtect, startSchema, startAnalysis);
 router.post('/compare', protect, compareSchema, compareSessions);
 router.get('/stats', protect, getDashboardStats);
 router.post('/:id/ai', protect, generateAI);

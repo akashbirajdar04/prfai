@@ -10,18 +10,33 @@ const analysisService = require('../services/analysis.service');
 // @route   POST /api/analysis/start
 // @access  Private
 const startAnalysis = asyncHandler(async (req, res) => {
-   const { url } = req.body;
+   let { url } = req.body;
+
+   if (!url) {
+      res.status(400);
+      throw new Error('URL is required');
+   }
+
+   // Format URL to ensure valid HTTP/HTTPS protocol exists
+   let formattedUrl = url.trim();
+   if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = `https://${formattedUrl}`;
+   }
+
+   const userId = req.user?._id ? req.user._id.toString() : `guest_${Date.now()}`;
 
    const session = await Session.create({
-      userId: req.user._id,
-      targetUrl: url,
+      userId: userId,
+      targetUrl: formattedUrl,
       status: 'running'
    });
 
    res.status(201).json({ sessionId: session._id, message: 'Analysis started' });
 
    // Fire and forget Lighthouse job
-   analysisService.startLighthouseJob(session._id, url).catch(console.error);
+   analysisService.startLighthouseJob(session._id, formattedUrl).catch((err) => {
+      console.error(`[AnalysisController] Background job failed for session ${session._id}:`, err);
+   });
 });
 
 // @desc    Get session details

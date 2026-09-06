@@ -31,7 +31,8 @@ const NewAnalysis = () => {
         } catch (error) {
             console.error("Analysis failed", error);
             setAnalyzing(false);
-            alert("Failed to start analysis. Please check the URL and try again.");
+            const serverMsg = error.response?.data?.message;
+            alert(serverMsg ? `Failed to start analysis: ${serverMsg}` : "Failed to start analysis. Please check the URL and try again.");
         }
     };
 
