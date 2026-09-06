@@ -71,9 +71,28 @@ const runLighthouse = async (url) => {
         const report = JSON.parse(runnerResult.report);
         const audits = report.audits || {};
 
+        const seoAuditRefs = report.categories?.seo?.auditRefs || [];
+        const seoIssues = [];
+
+        for (const ref of seoAuditRefs) {
+            const audit = audits[ref.id];
+            if (!audit) continue;
+            if (audit.score !== null && audit.score < 1) {
+                seoIssues.push({
+                    id: ref.id,
+                    title: audit.title,
+                    description: audit.explanation || audit.description || 'Improve search engine optimization for this check.',
+                    score: audit.score,
+                    severity: audit.score === 0 ? 'high' : 'medium',
+                    displayValue: audit.displayValue || ''
+                });
+            }
+        }
+
         const metrics = {
             performanceScore: Math.round((report.categories?.performance?.score || 0) * 100),
             seoScore: Math.round((report.categories?.seo?.score || 0) * 100),
+            seoIssues,
             lcp: audits['largest-contentful-paint']?.displayValue || 'N/A',
             cls: audits['cumulative-layout-shift']?.displayValue || 'N/A',
             inp: audits['interaction-to-next-paint']?.displayValue || 'N/A',
@@ -83,7 +102,7 @@ const runLighthouse = async (url) => {
             tbt: audits['total-blocking-time']?.displayValue || 'N/A',
         };
 
-        console.log(`[Lighthouse] Extracted Metrics:`, metrics);
+        console.log(`[Lighthouse] Extracted Metrics (SEO Issues Count: ${seoIssues.length}):`, metrics);
         return { rawReport: report, metrics };
 
     } catch (error) {

@@ -32,7 +32,7 @@ const analysisService = {
                 },
                 'metrics.seo': {
                     score: metrics.seoScore,
-                    issues: []
+                    issues: metrics.seoIssues || []
                 }
             });
 

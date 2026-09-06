@@ -18,6 +18,8 @@ const AnalysisResult = () => {
     const [showDashboard, setShowDashboard] = useState(false);
     const [loadingStage, setLoadingStage] = useState(0);
     const [error, setError] = useState(null);
+    const [sdkSyntax, setSdkSyntax] = useState('cjs');
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -197,22 +199,79 @@ const AnalysisResult = () => {
 
                     <CardContent className="p-6 space-y-4 text-xs">
                         <p className="text-muted-foreground leading-relaxed">
-                            To generate deep AI query diagnostics, link your Express backend using the micro-SDK:
+                            To generate deep AI query diagnostics, link your Express/Node.js backend using the micro-SDK:
                         </p>
-                        <div className="p-3 bg-background/80 rounded-lg border border-border/50 font-mono text-muted-foreground flex justify-between items-center">
+                        
+                        <div className="flex items-center justify-between p-3 bg-background/80 rounded-lg border border-border/50 font-mono text-muted-foreground">
                             <code>npm install ai-perf-sdk@latest</code>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 px-2 text-[11px]"
+                                onClick={() => navigator.clipboard.writeText('npm install ai-perf-sdk@latest')}
+                            >
+                                Copy Install
+                            </Button>
                         </div>
 
-                        <div className="p-4 bg-background/90 rounded-lg border border-border/60 font-mono text-foreground overflow-x-auto">
-                            <pre className="text-[11px] leading-relaxed text-muted-foreground">
-                                {`import { startSDK } from 'ai-perf-sdk';
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground font-medium text-[11px]">SDK Import Instructions:</span>
+                                <div className="flex bg-muted/50 p-0.5 rounded border border-border/40 text-[11px]">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setSdkSyntax('cjs')} 
+                                        className={`px-2.5 py-0.5 rounded font-mono transition-colors ${sdkSyntax === 'cjs' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        CommonJS (require)
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setSdkSyntax('esm')} 
+                                        className={`px-2.5 py-0.5 rounded font-mono transition-colors ${sdkSyntax === 'esm' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        ES Modules (import)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="relative p-4 bg-background/90 rounded-lg border border-border/60 font-mono text-foreground overflow-x-auto">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute top-2 right-2 h-7 px-2 text-[11px] bg-muted/40 hover:bg-muted"
+                                    onClick={() => {
+                                        const code = sdkSyntax === 'cjs' 
+                                            ? `const { startSDK } = require('ai-perf-sdk');\n\nstartSDK({\n  serviceName: 'backend-api',\n  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',\n  headers: { 'x-session-id': '${id}' }\n});`
+                                            : `import { startSDK } from 'ai-perf-sdk';\n\nstartSDK({\n  serviceName: 'backend-api',\n  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',\n  headers: { 'x-session-id': '${id}' }\n});`;
+                                        navigator.clipboard.writeText(code);
+                                        setCopied(true);
+                                        setTimeout(() => setCopied(false), 2000);
+                                    }}
+                                >
+                                    {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mr-1" /> : null}
+                                    {copied ? 'Copied!' : 'Copy Code'}
+                                </Button>
+                                <pre className="text-[11px] leading-relaxed text-muted-foreground pt-4">
+                                    {sdkSyntax === 'cjs' ? (
+                                        `const { startSDK } = require('ai-perf-sdk');
 
 startSDK({
   serviceName: 'backend-api',
   endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',
   headers: { 'x-session-id': '${id}' }
-});`}
-                            </pre>
+});`
+                                    ) : (
+                                        `import { startSDK } from 'ai-perf-sdk';
+
+startSDK({
+  serviceName: 'backend-api',
+  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',
+  headers: { 'x-session-id': '${id}' }
+});`
+                                    )}
+                                </pre>
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-between pt-2">
@@ -250,21 +309,21 @@ startSDK({
                         <MetricCard title="SEO Score" value={data.seo.score || 0} icon={Globe} trend="up" description="Search engine optimization index" />
                         <Card className="md:col-span-2">
                             <CardHeader className="py-4 px-6">
-                                <CardTitle className="text-base font-semibold">SEO Recommendations</CardTitle>
+                                <CardTitle className="text-base font-semibold">SEO Recommendations & Checks</CardTitle>
                             </CardHeader>
                             <CardContent className="px-6 pb-6 space-y-3">
                                 {data.seo.issues && data.seo.issues.length > 0 ? (
                                     data.seo.issues.map((issue, idx) => (
                                         <RecommendationCard
                                             key={idx}
-                                            title={issue.title}
-                                            description={issue.description}
-                                            severity={issue.severity}
+                                            title={typeof issue === 'string' ? issue : issue.title}
+                                            description={typeof issue === 'string' ? 'Failing SEO check detected during audit.' : (issue.description || issue.displayValue || '')}
+                                            severity={typeof issue === 'string' ? 'medium' : (issue.severity || 'medium')}
                                             category="SEO"
                                         />
                                     ))
                                 ) : (
-                                    <p className="text-xs text-muted-foreground py-6 text-center italic">No SEO issues detected.</p>
+                                    <p className="text-xs text-muted-foreground py-6 text-center italic">No SEO issues detected. Page meets key search optimization standards!</p>
                                 )}
                             </CardContent>
                         </Card>
@@ -272,7 +331,7 @@ startSDK({
                 </TabsContent>
 
                 <TabsContent value="backend" className="pt-2">
-                    <ApiTable data={data.api} />
+                    <ApiTable data={data.api} sessionId={id} />
                 </TabsContent>
 
                 <TabsContent value="ai" className="space-y-6 pt-2">
