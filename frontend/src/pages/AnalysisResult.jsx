@@ -44,10 +44,10 @@ const AnalysisResult = () => {
 
                 setData(mergedData);
 
-                if (currentData.status === 'completed') {
+                if (currentData.status === 'completed' || currentData.status === 'waiting_for_telemetry') {
                     setLoadingStage(1);
                 } else if (currentData.status === 'failed') {
-                    setError('Analysis failed.');
+                    setError(currentData.error?.message || 'Analysis failed.');
                 } else {
                     setLoadingStage(1);
                     timerId = setTimeout(fetchData, 3000);
