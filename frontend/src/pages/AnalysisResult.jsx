@@ -119,8 +119,8 @@ const AnalysisResult = () => {
                                 <div className="absolute inset-0 border-4 border-t-primary border-r-primary border-b-transparent border-l-transparent rounded-full animate-spin" />
                             )}
                             <div className="text-center">
-                                <h3 className={`text-3xl font-bold ${loadingStage === 1 ? 'text-emerald-400' : 'text-primary'}`}>
-                                    {loadingStage === 1 ? data?.performance?.score || 0 : '...'}
+                                <h3 className={`text-3xl font-bold ${data?.performance?.score ? 'text-emerald-400' : 'text-primary'}`}>
+                                    {data?.performance?.score !== undefined && data?.performance?.score !== null ? data.performance.score : '...'}
                                 </h3>
                                 <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
                                     Performance Index
@@ -130,10 +130,10 @@ const AnalysisResult = () => {
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <MetricPlaceholder label="LCP" value={data?.performance?.lcp} loading={loadingStage === 0} />
-                        <MetricPlaceholder label="CLS" value={data?.performance?.cls} loading={loadingStage === 0} />
-                        <MetricPlaceholder label="INP" value={data?.performance?.inp} loading={loadingStage === 0} />
-                        <MetricPlaceholder label="TTFB" value={data?.performance?.ttfb} loading={loadingStage === 0} />
+                        <MetricPlaceholder label="LCP" value={data?.performance?.lcp} loading={!data?.performance?.lcp} />
+                        <MetricPlaceholder label="CLS" value={data?.performance?.cls} loading={!data?.performance?.cls} />
+                        <MetricPlaceholder label="INP" value={data?.performance?.inp} loading={!data?.performance?.inp} />
+                        <MetricPlaceholder label="TTFB" value={data?.performance?.ttfb} loading={!data?.performance?.ttfb} />
                     </div>
                 </div>
 
@@ -183,108 +183,106 @@ const AnalysisResult = () => {
                 </div>
             </div>
 
-            {/* SDK Calibration box if waiting for telemetry */}
-            {isWaitingForTelemetry && (
-                <Card className="border-primary/30 bg-primary/5 overflow-hidden">
-                    <CardHeader className="py-4 px-6 bg-primary/10 border-b border-primary/20 flex flex-row items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-primary" />
-                            <CardTitle className="text-sm font-semibold">Backend SDK Telemetry Setup</CardTitle>
-                        </div>
-                        <Badge variant="warning" className="text-[11px] gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                            Waiting for Telemetry
-                        </Badge>
-                    </CardHeader>
+            {/* SDK Calibration box (Always available so user can view/copy instructions anytime after audit) */}
+            <Card className="border-primary/30 bg-primary/5 overflow-hidden shadow-sm">
+                <CardHeader className="py-4 px-6 bg-primary/10 border-b border-primary/20 flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-primary" />
+                        <CardTitle className="text-sm font-semibold">Backend SDK Telemetry Setup</CardTitle>
+                    </div>
+                    <Badge variant={isWaitingForTelemetry ? "warning" : "success"} className="text-[11px] gap-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${isWaitingForTelemetry ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></span>
+                        {isWaitingForTelemetry ? 'Waiting for Telemetry' : 'SDK Integration Ready'}
+                    </Badge>
+                </CardHeader>
 
-                    <CardContent className="p-6 space-y-4 text-xs">
-                        <p className="text-muted-foreground leading-relaxed">
-                            To generate deep AI query diagnostics, link your Express/Node.js backend using the micro-SDK:
-                        </p>
-                        
-                        <div className="flex items-center justify-between p-3 bg-background/80 rounded-lg border border-border/50 font-mono text-muted-foreground">
-                            <code>npm install ai-perf-sdk@latest</code>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-7 px-2 text-[11px]"
-                                onClick={() => navigator.clipboard.writeText('npm install ai-perf-sdk@latest')}
-                            >
-                                Copy Install
-                            </Button>
-                        </div>
+                <CardContent className="p-6 space-y-4 text-xs">
+                    <p className="text-muted-foreground leading-relaxed">
+                        To generate deep AI query diagnostics, link your Express/Node.js backend using the micro-SDK:
+                    </p>
+                    
+                    <div className="flex items-center justify-between p-3 bg-background/80 rounded-lg border border-border/50 font-mono text-muted-foreground">
+                        <code>npm install ai-perf-sdk@latest</code>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 px-2 text-[11px]"
+                            onClick={() => navigator.clipboard.writeText('npm install ai-perf-sdk@latest')}
+                        >
+                            Copy Install
+                        </Button>
+                    </div>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-muted-foreground font-medium text-[11px]">SDK Import Instructions:</span>
-                                <div className="flex bg-muted/50 p-0.5 rounded border border-border/40 text-[11px]">
-                                    <button 
-                                        type="button"
-                                        onClick={() => setSdkSyntax('cjs')} 
-                                        className={`px-2.5 py-0.5 rounded font-mono transition-colors ${sdkSyntax === 'cjs' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-                                    >
-                                        CommonJS (require)
-                                    </button>
-                                    <button 
-                                        type="button"
-                                        onClick={() => setSdkSyntax('esm')} 
-                                        className={`px-2.5 py-0.5 rounded font-mono transition-colors ${sdkSyntax === 'esm' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-                                    >
-                                        ES Modules (import)
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="relative p-4 bg-background/90 rounded-lg border border-border/60 font-mono text-foreground overflow-x-auto">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute top-2 right-2 h-7 px-2 text-[11px] bg-muted/40 hover:bg-muted"
-                                    onClick={() => {
-                                        const code = sdkSyntax === 'cjs' 
-                                            ? `const { startSDK } = require('ai-perf-sdk');\n\nstartSDK({\n  serviceName: 'backend-api',\n  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',\n  headers: { 'x-session-id': '${id}' }\n});`
-                                            : `import { startSDK } from 'ai-perf-sdk';\n\nstartSDK({\n  serviceName: 'backend-api',\n  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',\n  headers: { 'x-session-id': '${id}' }\n});`;
-                                        navigator.clipboard.writeText(code);
-                                        setCopied(true);
-                                        setTimeout(() => setCopied(false), 2000);
-                                    }}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground font-medium text-[11px]">SDK Import Instructions:</span>
+                            <div className="flex bg-muted/50 p-0.5 rounded border border-border/40 text-[11px]">
+                                <button 
+                                    type="button"
+                                    onClick={() => setSdkSyntax('cjs')} 
+                                    className={`px-2.5 py-0.5 rounded font-mono transition-colors ${sdkSyntax === 'cjs' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
-                                    {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mr-1" /> : null}
-                                    {copied ? 'Copied!' : 'Copy Code'}
-                                </Button>
-                                <pre className="text-[11px] leading-relaxed text-muted-foreground pt-4">
-                                    {sdkSyntax === 'cjs' ? (
-                                        `const { startSDK } = require('ai-perf-sdk');
-
-startSDK({
-  serviceName: 'backend-api',
-  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',
-  headers: { 'x-session-id': '${id}' }
-});`
-                                    ) : (
-                                        `import { startSDK } from 'ai-perf-sdk';
-
-startSDK({
-  serviceName: 'backend-api',
-  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',
-  headers: { 'x-session-id': '${id}' }
-});`
-                                    )}
-                                </pre>
+                                    CommonJS (require)
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setSdkSyntax('esm')} 
+                                    className={`px-2.5 py-0.5 rounded font-mono transition-colors ${sdkSyntax === 'esm' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    ES Modules (import)
+                                </button>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-2">
-                            <span className="text-xs text-muted-foreground">Captured API Routes: <strong className="text-foreground">{data?.metrics?.api?.length || 0}</strong></span>
-                            {data?.metrics?.api?.length > 0 && (
-                                <Button size="sm" onClick={handleGenerateAI} className="gap-2">
-                                    <Brain className="w-4 h-4" /> Generate Final AI Insights
-                                </Button>
-                            )}
+                        <div className="relative p-4 bg-background/90 rounded-lg border border-border/60 font-mono text-foreground overflow-x-auto">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="absolute top-2 right-2 h-7 px-2 text-[11px] bg-muted/40 hover:bg-muted"
+                                onClick={() => {
+                                    const code = sdkSyntax === 'cjs' 
+                                        ? `const { startSDK } = require('ai-perf-sdk');\n\nstartSDK({\n  serviceName: 'backend-api',\n  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',\n  headers: { 'x-session-id': '${id}' }\n});`
+                                        : `import { startSDK } from 'ai-perf-sdk';\n\nstartSDK({\n  serviceName: 'backend-api',\n  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',\n  headers: { 'x-session-id': '${id}' }\n});`;
+                                    navigator.clipboard.writeText(code);
+                                    setCopied(true);
+                                    setTimeout(() => setCopied(false), 2000);
+                                }}
+                            >
+                                {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mr-1" /> : null}
+                                {copied ? 'Copied!' : 'Copy Code'}
+                            </Button>
+                            <pre className="text-[11px] leading-relaxed text-muted-foreground pt-4">
+                                {sdkSyntax === 'cjs' ? (
+                                    `const { startSDK } = require('ai-perf-sdk');
+
+startSDK({
+  serviceName: 'backend-api',
+  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',
+  headers: { 'x-session-id': '${id}' }
+});`
+                                ) : (
+                                    `import { startSDK } from 'ai-perf-sdk';
+
+startSDK({
+  serviceName: 'backend-api',
+  endpoint: 'https://prfeai-backend.onrender.com/api/telemetry',
+  headers: { 'x-session-id': '${id}' }
+});`
+                                )}
+                            </pre>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                        <span className="text-xs text-muted-foreground">Captured API Routes: <strong className="text-foreground">{data?.metrics?.api?.length || 0}</strong></span>
+                        {data?.metrics?.api?.length > 0 && (
+                            <Button size="sm" onClick={handleGenerateAI} className="gap-2">
+                                <Brain className="w-4 h-4" /> Generate Final AI Insights
+                            </Button>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Tabbed view */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>

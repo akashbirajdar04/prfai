@@ -82,13 +82,33 @@ const runLighthouse = async (url) => {
 
         const seoAuditRefs = report.categories?.seo?.auditRefs || [];
         const seoIssues = [];
+        const processedIds = new Set();
 
         for (const ref of seoAuditRefs) {
             const audit = audits[ref.id];
             if (!audit) continue;
             if (audit.score !== null && audit.score < 1) {
+                processedIds.add(ref.id);
                 seoIssues.push({
                     id: ref.id,
+                    title: audit.title,
+                    description: audit.explanation || audit.description || 'Improve search engine optimization for this check.',
+                    score: audit.score,
+                    severity: audit.score === 0 ? 'high' : 'medium',
+                    displayValue: audit.displayValue || ''
+                });
+            }
+        }
+
+        // Additional fallback scanning for SEO-related audits if not captured by auditRefs
+        const knownSeoKeys = ['viewport', 'document-title', 'meta-description', 'http-status-code', 'link-text', 'is-crawlable', 'robots-txt', 'canonical', 'font-size', 'tap-targets', 'hreflang', 'structured-data'];
+        for (const key of knownSeoKeys) {
+            if (processedIds.has(key)) continue;
+            const audit = audits[key];
+            if (audit && audit.score !== null && audit.score < 1) {
+                processedIds.add(key);
+                seoIssues.push({
+                    id: key,
                     title: audit.title,
                     description: audit.explanation || audit.description || 'Improve search engine optimization for this check.',
                     score: audit.score,
