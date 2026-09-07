@@ -93,71 +93,25 @@ const AnalysisResult = () => {
         </div>
     );
 
-    // Summary Loading State
-    if (!showDashboard) {
-        return (
-            <div className="min-h-[75vh] flex flex-col items-center justify-center p-6 relative overflow-hidden space-y-10">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] -z-10" />
-
-                <div className="text-center space-y-2">
-                    <Badge variant="default" className="gap-1 px-3 py-1">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        {loadingStage === 1 ? 'Lighthouse Audit Complete' : 'Executing Diagnostics'}
-                    </Badge>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        {loadingStage === 1 ? 'Audit Ready' : 'Analyzing Performance'}
-                    </h1>
-                    <p className="text-sm text-muted-foreground font-mono bg-muted/30 px-3 py-1 rounded-md inline-block border border-border/40">
-                        {data?.targetUrl || 'Target site...'}
-                    </p>
-                </div>
-
-                <div className="flex flex-col md:flex-row items-center justify-center gap-10">
-                    <div className="relative">
-                        <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center relative ${loadingStage === 1 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-primary/20 bg-primary/5'}`}>
-                            {loadingStage === 0 && (
-                                <div className="absolute inset-0 border-4 border-t-primary border-r-primary border-b-transparent border-l-transparent rounded-full animate-spin" />
-                            )}
-                            <div className="text-center">
-                                <h3 className={`text-3xl font-bold ${data?.performance?.score ? 'text-emerald-400' : 'text-primary'}`}>
-                                    {data?.performance?.score !== undefined && data?.performance?.score !== null ? data.performance.score : '...'}
-                                </h3>
-                                <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
-                                    Performance Index
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <MetricPlaceholder label="LCP" value={data?.performance?.lcp} loading={!data?.performance?.lcp} />
-                        <MetricPlaceholder label="CLS" value={data?.performance?.cls} loading={!data?.performance?.cls} />
-                        <MetricPlaceholder label="INP" value={data?.performance?.inp} loading={!data?.performance?.inp} />
-                        <MetricPlaceholder label="TTFB" value={data?.performance?.ttfb} loading={!data?.performance?.ttfb} />
-                    </div>
-                </div>
-
-                <div className="h-12 flex items-center justify-center">
-                    {loadingStage === 1 ? (
-                        <Button
-                            onClick={() => setShowDashboard(true)}
-                            size="lg"
-                            className="rounded-full px-8 shadow-lg shadow-primary/25 gap-2"
-                        >
-                            View Comprehensive Report <ArrowLeft className="w-4 h-4 rotate-180" />
-                        </Button>
-                    ) : (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
-                            <Activity className="w-4 h-4 text-primary animate-bounce" />
-                            <span>Tracing Web Vitals and API Telemetry...</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
+    const isRunning = !data || data?.status === 'running';
     const isWaitingForTelemetry = data?.status === 'waiting_for_telemetry';
+
+    if (error) return (
+        <div className="min-h-[65vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div className="w-12 h-12 bg-destructive/10 rounded-xl flex items-center justify-center text-rose-400 border border-destructive/20">
+                <Zap className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground">Analysis Failed</h2>
+            <p className="text-sm text-muted-foreground max-w-md">{error}</p>
+            <div className="bg-card border border-border/70 p-4 rounded-xl text-left text-xs max-w-lg w-full font-mono text-muted-foreground">
+                <p className="text-destructive font-sans font-medium mb-1">Details:</p>
+                <p className="break-all">{data?.error?.message || 'Unknown error occurred during lighthouse execution.'}</p>
+            </div>
+            <Button onClick={() => navigate('/analysis/new')} variant="outline" size="sm">
+                Try Another URL
+            </Button>
+        </div>
+    );
 
     return (
         <div className="space-y-6 pb-12 animate-in fade-in-50 duration-300">
@@ -165,15 +119,21 @@ const AnalysisResult = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-border/40">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                        Performance Audit Report
+                        Performance & SEO Audit Report
                     </h1>
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                        <span>{data.targetUrl || data.url || 'Target Endpoint'}</span>
+                        <span>{data?.targetUrl || data?.url || 'Target Endpoint'}</span>
                         <span>•</span>
-                        <span>{data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'Today'}</span>
+                        <span>{data?.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'Today'}</span>
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
+                    {isRunning && (
+                        <Badge variant="warning" className="animate-pulse gap-1.5 py-1 px-3">
+                            <Activity className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                            Lighthouse Audit Running in Background...
+                        </Badge>
+                    )}
                     <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                         <Share2 className="w-3.5 h-3.5" /> Share
                     </Button>
@@ -183,22 +143,22 @@ const AnalysisResult = () => {
                 </div>
             </div>
 
-            {/* SDK Calibration box (Always available so user can view/copy instructions anytime after audit) */}
+            {/* SDK Setup Instructions - Rendered Immediately for the User */}
             <Card className="border-primary/30 bg-primary/5 overflow-hidden shadow-sm">
                 <CardHeader className="py-4 px-6 bg-primary/10 border-b border-primary/20 flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4 text-primary" />
-                        <CardTitle className="text-sm font-semibold">Backend SDK Telemetry Setup</CardTitle>
+                        <CardTitle className="text-sm font-semibold">Backend SDK Telemetry Setup Instructions</CardTitle>
                     </div>
-                    <Badge variant={isWaitingForTelemetry ? "warning" : "success"} className="text-[11px] gap-1">
-                        <span className={`w-1.5 h-1.5 rounded-full ${isWaitingForTelemetry ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></span>
-                        {isWaitingForTelemetry ? 'Waiting for Telemetry' : 'SDK Integration Ready'}
+                    <Badge variant={isWaitingForTelemetry ? "warning" : isRunning ? "outline" : "success"} className="text-[11px] gap-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-amber-400 animate-ping' : isWaitingForTelemetry ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></span>
+                        {isRunning ? 'Auditing Background Metrics' : isWaitingForTelemetry ? 'Waiting for Telemetry' : 'SDK Connected'}
                     </Badge>
                 </CardHeader>
 
                 <CardContent className="p-6 space-y-4 text-xs">
                     <p className="text-muted-foreground leading-relaxed">
-                        To generate deep AI query diagnostics, link your Express/Node.js backend using the micro-SDK:
+                        To capture deep backend API query latency and telemetry while the Lighthouse SEO audit finishes in the background, initialize the micro-SDK in your Node.js backend:
                     </p>
                     
                     <div className="flex items-center justify-between p-3 bg-background/80 rounded-lg border border-border/50 font-mono text-muted-foreground">
@@ -215,7 +175,7 @@ const AnalysisResult = () => {
 
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground font-medium text-[11px]">SDK Import Instructions:</span>
+                            <span className="text-muted-foreground font-medium text-[11px]">SDK Import & Initialization Code:</span>
                             <div className="flex bg-muted/50 p-0.5 rounded border border-border/40 text-[11px]">
                                 <button 
                                     type="button"
@@ -295,22 +255,34 @@ startSDK({
 
                 <TabsContent value="performance" className="space-y-6 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <MetricCard title="Performance Score" value={data.performance.score || 0} trend="neutral" icon={Zap} description="Weighted aggregate" />
-                        <MetricCard title="LCP (Largest Contentful)" value={data.performance.lcp || '0s'} trend={parseFloat(data.performance.lcp) > 2.5 ? 'down' : 'up'} icon={Activity} description="Main element load" />
-                        <MetricCard title="CLS (Layout Shift)" value={data.performance.cls || 0} trend={parseFloat(data.performance.cls) > 0.1 ? 'down' : 'up'} icon={Activity} description="Visual stability" />
-                        <MetricCard title="TTFB (Time to First Byte)" value={data.performance.ttfb || '0ms'} description="Server response time" icon={Server} />
+                        <MetricCard title="Performance Score" value={data?.performance?.score !== undefined ? data.performance.score : '...'} trend="neutral" icon={Zap} description="Weighted aggregate" />
+                        <MetricCard title="LCP (Largest Contentful)" value={data?.performance?.lcp || '...'} trend={parseFloat(data?.performance?.lcp) > 2.5 ? 'down' : 'up'} icon={Activity} description="Main element load" />
+                        <MetricCard title="CLS (Layout Shift)" value={data?.performance?.cls !== undefined ? data.performance.cls : '...'} trend={parseFloat(data?.performance?.cls) > 0.1 ? 'down' : 'up'} icon={Activity} description="Visual stability" />
+                        <MetricCard title="TTFB (Time to First Byte)" value={data?.performance?.ttfb || '...'} description="Server response time" icon={Server} />
                     </div>
                 </TabsContent>
 
                 <TabsContent value="seo" className="space-y-6 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <MetricCard title="SEO Score" value={data.seo.score || 0} icon={Globe} trend="up" description="Search engine optimization index" />
+                        <MetricCard title="SEO Score" value={data?.seo?.score !== undefined ? data.seo.score : '...'} icon={Globe} trend="up" description="Search engine optimization index" />
                         <Card className="md:col-span-2">
-                            <CardHeader className="py-4 px-6">
+                            <CardHeader className="py-4 px-6 flex flex-row items-center justify-between">
                                 <CardTitle className="text-base font-semibold">SEO Recommendations & Checks</CardTitle>
+                                {isRunning && (
+                                    <Badge variant="outline" className="animate-pulse text-[11px] gap-1">
+                                        <Sparkles className="w-3 h-3 text-amber-400 animate-spin" />
+                                        Auditing SEO...
+                                    </Badge>
+                                )}
                             </CardHeader>
                             <CardContent className="px-6 pb-6 space-y-3">
-                                {data.seo.issues && data.seo.issues.length > 0 ? (
+                                {isRunning && (!data?.seo?.issues || data.seo.issues.length === 0) ? (
+                                    <div className="py-8 text-center space-y-3">
+                                        <Activity className="w-6 h-6 text-primary animate-bounce mx-auto" />
+                                        <p className="text-xs text-muted-foreground animate-pulse">Running PageSpeed & Lighthouse SEO checks in backend...</p>
+                                        <p className="text-[11px] text-muted-foreground/70">Audit recommendations will appear automatically here once loaded.</p>
+                                    </div>
+                                ) : data?.seo?.issues && data.seo.issues.length > 0 ? (
                                     data.seo.issues.map((issue, idx) => (
                                         <RecommendationCard
                                             key={idx}
