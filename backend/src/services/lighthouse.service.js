@@ -119,12 +119,20 @@ const runLighthouse = async (url) => {
         throw error;
     } finally {
         if (browser) {
-            await browser.close().catch(() => {});
-            console.log("[Lighthouse] Puppeteer browser closed.");
+            try {
+                await browser.close();
+                console.log("[Lighthouse] Puppeteer browser closed.");
+            } catch (err) {
+                console.warn("[Lighthouse] Browser close error:", err.message);
+            }
         }
         if (chromeInstance) {
-            await chromeInstance.kill().catch(() => {});
-            console.log("[Lighthouse] Chrome launcher instance killed.");
+            try {
+                await chromeInstance.kill();
+                console.log("[Lighthouse] Chrome launcher kill error:", err.message);
+            } catch (err) {
+                console.warn("[Lighthouse] Chrome launcher kill error:", err.message);
+            }
         }
     }
 };
