@@ -9,30 +9,31 @@ connectDB();
 
 const app = express();
 
+// Universal CORS Middleware (Always first)
+app.use((req, res, next) => {
+    const origin = req.headers.origin || '*';
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    if (origin !== '*') {
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-session-id, X-Requested-With, Accept, Origin");
+
+    if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+    }
+    next();
+});
+
 const corsOptions = {
     origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-session-id", "X-Requested-With", "Accept", "Origin"],
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
-
-// Fail-safe CORS headers middleware for all origins including Vercel
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-session-id, X-Requested-With, Accept, Origin");
-    }
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
 
 // Parse Protobuf data before JSON parser
 app.use(protobufParser);
