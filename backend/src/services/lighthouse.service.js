@@ -1,7 +1,75 @@
 const fs = require('fs');
+const axios = require('axios');
 
 const runLighthouse = async (url) => {
-    // Dynamic import for ESM-only lighthouse and chrome-launcher packages
+    // 1. Primary: Try Google PageSpeed Insights API (Official Google Lighthouse API)
+    try {
+        console.log(`[Lighthouse] Attempting Google PageSpeed Insights API for ${url}...`);
+        const apiKey = process.env.PAGESPEED_API_KEY || process.env.GOOGLE_API_KEY || '';
+        const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=performance&category=seo&category=accessibility&category=best-practices${apiKey ? `&key=${apiKey}` : ''}`;
+
+        const apiResponse = await axios.get(apiUrl, { timeout: 30000 });
+        if (apiResponse.data && apiResponse.data.lighthouseResult) {
+            const report = apiResponse.data.lighthouseResult;
+            const audits = report.audits || {};
+            const seoAuditRefs = report.categories?.seo?.auditRefs || [];
+            const seoIssues = [];
+            const processedIds = new Set();
+
+            for (const ref of seoAuditRefs) {
+                const audit = audits[ref.id];
+                if (!audit) continue;
+                if (audit.score !== null && audit.score < 1) {
+                    processedIds.add(ref.id);
+                    seoIssues.push({
+                        id: ref.id,
+                        title: audit.title,
+                        description: audit.explanation || audit.description || 'Improve search engine optimization for this check.',
+                        score: audit.score,
+                        severity: audit.score === 0 ? 'high' : 'medium',
+                        displayValue: audit.displayValue || ''
+                    });
+                }
+            }
+
+            const knownSeoKeys = ['viewport', 'document-title', 'meta-description', 'http-status-code', 'link-text', 'is-crawlable', 'robots-txt', 'canonical', 'font-size', 'tap-targets', 'hreflang', 'structured-data'];
+            for (const key of knownSeoKeys) {
+                if (processedIds.has(key)) continue;
+                const audit = audits[key];
+                if (audit && audit.score !== null && audit.score < 1) {
+                    processedIds.add(key);
+                    seoIssues.push({
+                        id: key,
+                        title: audit.title,
+                        description: audit.explanation || audit.description || 'Improve search engine optimization for this check.',
+                        score: audit.score,
+                        severity: audit.score === 0 ? 'high' : 'medium',
+                        displayValue: audit.displayValue || ''
+                    });
+                }
+            }
+
+            const metrics = {
+                performanceScore: Math.round((report.categories?.performance?.score || 0) * 100),
+                seoScore: Math.round((report.categories?.seo?.score || 0) * 100),
+                seoIssues,
+                lcp: audits['largest-contentful-paint']?.displayValue || 'N/A',
+                cls: audits['cumulative-layout-shift']?.displayValue || 'N/A',
+                inp: audits['interaction-to-next-paint']?.displayValue || 'N/A',
+                ttfb: audits['server-response-time']?.displayValue || 'N/A',
+                fcp: audits['first-contentful-paint']?.displayValue || 'N/A',
+                si: audits['speed-index']?.displayValue || 'N/A',
+                tbt: audits['total-blocking-time']?.displayValue || 'N/A',
+            };
+
+            console.log(`[Lighthouse] PageSpeed API Success! Extracted Metrics (SEO Issues Count: ${seoIssues.length}):`, metrics);
+            return { rawReport: report, metrics };
+        }
+    } catch (apiErr) {
+        console.warn(`[Lighthouse] PageSpeed API unavailable (${apiErr.message}), falling back to local Puppeteer/Chrome audit...`);
+    }
+
+    // 2. Fallback: Dynamic import for ESM-only lighthouse and chrome-launcher packages
     const { default: lighthouse } = await import('lighthouse');
     const chromeLauncher = await import('chrome-launcher');
 
