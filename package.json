@@ -7,6 +7,8 @@
     "test": "test"
   },
   "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "vercel-build": "cd frontend && npm install && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint ."
   },
