@@ -9,31 +9,20 @@ connectDB();
 
 const app = express();
 
-// Universal CORS Middleware (Always first)
-app.use((req, res, next) => {
-    const origin = req.headers.origin || '*';
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    if (origin !== '*') {
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-    }
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-session-id, X-Requested-With, Accept, Origin");
-
-    if (req.method === 'OPTIONS') {
-        return res.status(204).end();
-    }
-    next();
-});
-
+// Bulletproof CORS Configuration for Vercel, Render, and Local Dev
 const corsOptions = {
-    origin: true,
+    origin: (origin, callback) => {
+        // Allow all requesting origins dynamically with credentials support
+        callback(null, true);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-session-id", "X-Requested-With", "Accept", "Origin"],
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Parse Protobuf data before JSON parser
 app.use(protobufParser);
