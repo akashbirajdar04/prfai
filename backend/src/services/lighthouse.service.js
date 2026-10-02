@@ -213,35 +213,8 @@ const runLighthouse = async (url) => {
         return { rawReport: report, metrics };
 
     } catch (error) {
-        console.error("[Lighthouse] Local Chrome execution error:", error.message);
-        console.warn("[Lighthouse] Resource limit or browser launch issue encountered. Returning estimated performance baseline metrics...");
-        
-        const fallbackMetrics = {
-            performanceScore: 82,
-            seoScore: 88,
-            seoIssues: [
-                {
-                    id: 'meta-description',
-                    title: 'Document Meta Description Check',
-                    description: 'Ensure target page contains a high quality meta description tag for search indexing.',
-                    score: 0.5,
-                    severity: 'medium',
-                    displayValue: 'Optimization Recommended'
-                }
-            ],
-            lcp: '2.1 s',
-            cls: '0.035',
-            inp: '110 ms',
-            ttfb: '180 ms',
-            fcp: '1.1 s',
-            si: '1.9 s',
-            tbt: '90 ms'
-        };
-
-        return {
-            rawReport: { note: "Baseline metrics fallback used due to container RAM constraints.", error: error.message },
-            metrics: fallbackMetrics
-        };
+        console.error("Lighthouse run failed:", error);
+        throw error;
     } finally {
         if (chromeInstance) {
             try {

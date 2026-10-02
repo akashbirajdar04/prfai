@@ -13,7 +13,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    timeout: 180000,
+    timeout: 60000,
 });
 
 // Automatically add the auth token from localStorage to every request

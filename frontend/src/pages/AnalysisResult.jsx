@@ -9,6 +9,7 @@ import { Badge } from '../components/ui/Badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import { Zap, Globe, Database, Brain, Download, Share2, Activity, Server, ArrowLeft, RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
 import analysisService from '../services/analysisService';
+import useWebVitals from '../hooks/useWebVitals';
 
 const AnalysisResult = () => {
     const { id } = useParams();
@@ -20,6 +21,24 @@ const AnalysisResult = () => {
     const [error, setError] = useState(null);
     const [sdkSyntax, setSdkSyntax] = useState('cjs');
     const [copied, setCopied] = useState(false);
+
+    const liveVitals = useWebVitals(id);
+
+    const getMetricDisplay = (metricKey, fallback = '...') => {
+        const perf = data?.performance;
+        if (perf && perf[metricKey] && perf[metricKey] !== 'N/A' && perf[metricKey] !== '...') {
+            return perf[metricKey];
+        }
+        const found = liveVitals.find(v => v.name.toLowerCase() === metricKey.toLowerCase());
+        if (found) {
+            if (found.name === 'CLS') return typeof found.value === 'number' ? found.value.toFixed(3) : found.value;
+            if (['LCP', 'FCP', 'TTFB', 'INP'].includes(found.name) && typeof found.value === 'number') {
+                return found.value > 10 ? `${(found.value / 1000).toFixed(2)} s` : `${Math.round(found.value)} ms`;
+            }
+            return String(found.value);
+        }
+        return fallback;
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -256,9 +275,9 @@ startSDK({
                 <TabsContent value="performance" className="space-y-6 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <MetricCard title="Performance Score" value={data?.performance?.score ?? '...'} trend="neutral" icon={Zap} description="Weighted aggregate" />
-                        <MetricCard title="LCP (Largest Contentful)" value={data?.performance?.lcp || '...'} trend={parseFloat(data?.performance?.lcp) > 2.5 ? 'down' : 'up'} icon={Activity} description="Main element load" />
-                        <MetricCard title="CLS (Layout Shift)" value={data?.performance?.cls !== undefined ? data.performance.cls : '...'} trend={parseFloat(data?.performance?.cls) > 0.1 ? 'down' : 'up'} icon={Activity} description="Visual stability" />
-                        <MetricCard title="TTFB (Time to First Byte)" value={data?.performance?.ttfb || '...'} description="Server response time" icon={Server} />
+                        <MetricCard title="LCP (Largest Contentful)" value={getMetricDisplay('lcp')} trend={parseFloat(getMetricDisplay('lcp')) > 2.5 ? 'down' : 'up'} icon={Activity} description="Main element load" />
+                        <MetricCard title="CLS (Layout Shift)" value={getMetricDisplay('cls')} trend={parseFloat(getMetricDisplay('cls')) > 0.1 ? 'down' : 'up'} icon={Activity} description="Visual stability" />
+                        <MetricCard title="TTFB (Time to First Byte)" value={getMetricDisplay('ttfb')} description="Server response time" icon={Server} />
                     </div>
                 </TabsContent>
 

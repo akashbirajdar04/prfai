@@ -33,9 +33,26 @@ const telemetryService = {
         });
 
         // 2. Process NEW events from this batch
-        const events = Array.isArray(traces) ? traces : (traces.payload || []);
+        const events = Array.isArray(traces) ? traces : (traces.payload || traces.metrics || []);
+        const vitalsCaptured = {};
 
         events.forEach(event => {
+            if (!event) return;
+
+            // Process browser Web Vitals metric events
+            if (event.name && ['LCP', 'CLS', 'INP', 'FCP', 'TTFB'].includes(String(event.name).toUpperCase())) {
+                const metricName = String(event.name).toLowerCase();
+                let displayVal = event.value;
+                if (['lcp', 'fcp', 'ttfb', 'inp'].includes(metricName) && typeof event.value === 'number') {
+                    displayVal = event.value > 10 ? `${(event.value / 1000).toFixed(2)} s` : `${Math.round(event.value)} ms`;
+                } else if (metricName === 'cls' && typeof event.value === 'number') {
+                    displayVal = event.value.toFixed(3);
+                }
+                vitalsCaptured[metricName] = String(displayVal);
+                return;
+            }
+
+            // Process HTTP tracing events
             const isHttp = event.type && event.type.startsWith('http');
             if (!isHttp) return;
 
@@ -83,15 +100,32 @@ const telemetryService = {
         }));
 
         // 4. Persistence
-        const filePath = aiService.storeLatencyForRAG(sessionId, aggregated);
-        const cloudinaryUrl = await uploadFile(filePath, 'telemetry_data');
+        const updateObj = {};
 
-        await Session.findByIdAndUpdate(sessionId, {
-            'artifacts.endpointsUrl': cloudinaryUrl,
-            'metrics.api': aggregated
-        });
+        if (aggregated.length > 0) {
+            const filePath = aiService.storeLatencyForRAG(sessionId, aggregated);
+            const cloudinaryUrl = await uploadFile(filePath, 'telemetry_data');
+            updateObj['artifacts.endpointsUrl'] = cloudinaryUrl;
+            updateObj['metrics.api'] = aggregated;
+        }
 
-        return { url: cloudinaryUrl, count: aggregated.length };
+        if (Object.keys(vitalsCaptured).length > 0) {
+            if (vitalsCaptured.lcp) updateObj['metrics.performance.lcp'] = vitalsCaptured.lcp;
+            if (vitalsCaptured.cls) updateObj['metrics.performance.cls'] = vitalsCaptured.cls;
+            if (vitalsCaptured.inp) updateObj['metrics.performance.inp'] = vitalsCaptured.inp;
+            if (vitalsCaptured.fcp) updateObj['metrics.performance.fcp'] = vitalsCaptured.fcp;
+            if (vitalsCaptured.ttfb) updateObj['metrics.performance.ttfb'] = vitalsCaptured.ttfb;
+
+            if (session.status === 'pending' || session.status === 'running') {
+                updateObj.status = 'waiting_for_telemetry';
+            }
+        }
+
+        if (Object.keys(updateObj).length > 0) {
+            await Session.findByIdAndUpdate(sessionId, updateObj);
+        }
+
+        return { url: updateObj['artifacts.endpointsUrl'] || '', count: aggregated.length };
     }
 };
 

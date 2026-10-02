@@ -22,6 +22,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Parse Protobuf data before JSON parser
 app.use(protobufParser);
