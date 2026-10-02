@@ -18,7 +18,8 @@ const startAnalysis = asyncHandler(async (req, res) => {
    }
 
    // Format URL to ensure valid HTTP/HTTPS protocol exists
-   let formattedUrl = url.trim();
+   let formattedUrl = url.trim().replace(/^https?:\/\/\s*/i, (match) => match.trim());
+   formattedUrl = formattedUrl.replace(/^(https?:\/\/)+/i, '$1');
    if (!/^https?:\/\//i.test(formattedUrl)) {
       formattedUrl = `https://${formattedUrl}`;
    }

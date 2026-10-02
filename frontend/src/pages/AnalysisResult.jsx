@@ -255,7 +255,7 @@ startSDK({
 
                 <TabsContent value="performance" className="space-y-6 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <MetricCard title="Performance Score" value={data?.performance?.score !== undefined ? data.performance.score : '...'} trend="neutral" icon={Zap} description="Weighted aggregate" />
+                        <MetricCard title="Performance Score" value={data?.performance?.score ?? '...'} trend="neutral" icon={Zap} description="Weighted aggregate" />
                         <MetricCard title="LCP (Largest Contentful)" value={data?.performance?.lcp || '...'} trend={parseFloat(data?.performance?.lcp) > 2.5 ? 'down' : 'up'} icon={Activity} description="Main element load" />
                         <MetricCard title="CLS (Layout Shift)" value={data?.performance?.cls !== undefined ? data.performance.cls : '...'} trend={parseFloat(data?.performance?.cls) > 0.1 ? 'down' : 'up'} icon={Activity} description="Visual stability" />
                         <MetricCard title="TTFB (Time to First Byte)" value={data?.performance?.ttfb || '...'} description="Server response time" icon={Server} />
@@ -264,7 +264,7 @@ startSDK({
 
                 <TabsContent value="seo" className="space-y-6 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <MetricCard title="SEO Score" value={data?.seo?.score !== undefined ? data.seo.score : '...'} icon={Globe} trend="up" description="Search engine optimization index" />
+                        <MetricCard title="SEO Score" value={data?.seo?.score ?? '...'} icon={Globe} trend="up" description="Search engine optimization index" />
                         <Card className="md:col-span-2">
                             <CardHeader className="py-4 px-6 flex flex-row items-center justify-between">
                                 <CardTitle className="text-base font-semibold">SEO Recommendations & Checks</CardTitle>
@@ -301,7 +301,7 @@ startSDK({
                 </TabsContent>
 
                 <TabsContent value="backend" className="pt-2">
-                    <ApiTable data={data.api} sessionId={id} />
+                    <ApiTable data={data?.api || []} sessionId={id} />
                 </TabsContent>
 
                 <TabsContent value="ai" className="space-y-6 pt-2">
@@ -312,7 +312,7 @@ startSDK({
                                 AI Executive Diagnostics
                             </div>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                {data.ai && data.ai.length > 0
+                                {data?.ai && data.ai.length > 0
                                     ? "Prioritized AI optimizations targeting slow database queries, render blocking resources, and unminified bundles."
                                     : "Telemetry data captured. Run AI generation to get code-level suggestions."}
                             </p>
@@ -320,7 +320,7 @@ startSDK({
                     </Card>
 
                     <div className="grid grid-cols-1 gap-4">
-                        {data.ai && data.ai.length > 0 ? (
+                        {data?.ai && data.ai.length > 0 ? (
                             data.ai.map((insight, idx) => (
                                 <RecommendationCard key={idx} {...insight} />
                             ))

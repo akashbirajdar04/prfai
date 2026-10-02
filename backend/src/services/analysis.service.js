@@ -28,8 +28,8 @@ const analysisService = {
             console.log(`[AnalysisService] [${sessionId}] Starting Lighthouse for ${url}...`);
             const { rawReport, metrics } = await withTimeout(
                 runLighthouse(url),
-                60000,
-                'Lighthouse audit timed out after 60 seconds. Target site took too long or blocked automated scanner.'
+                120000,
+                'Lighthouse audit timed out after 120 seconds. Target site took too long or blocked automated scanner.'
             );
 
             console.log(`[AnalysisService] [${sessionId}] Uploading report...`);

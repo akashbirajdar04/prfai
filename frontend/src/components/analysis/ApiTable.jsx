@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Code, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 
 const ApiTable = ({ data = [], sessionId = '' }) => {
+    const safeData = Array.isArray(data) ? data : [];
     const [showGuide, setShowGuide] = useState(false);
     const [syntax, setSyntax] = useState('cjs');
     const [copied, setCopied] = useState(false);
@@ -111,7 +112,7 @@ startSDK({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/40">
-                            {data.map((row, index) => (
+                            {safeData.map((row, index) => (
                                 <tr key={index} className="hover:bg-accent/40 transition-colors">
                                     <td className="px-6 py-3.5 font-mono text-xs font-medium text-foreground max-w-[220px] truncate" title={row.endpoint}>
                                         {row.endpoint}
@@ -144,7 +145,7 @@ startSDK({
                                 </tr>
                             ))}
 
-                            {data.length === 0 && (
+                            {safeData.length === 0 && (
                                 <tr>
                                     <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground text-xs italic">
                                         No API telemetry data found for this session.
